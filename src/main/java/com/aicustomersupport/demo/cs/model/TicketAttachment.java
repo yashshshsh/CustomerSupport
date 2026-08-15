@@ -20,28 +20,30 @@ public class TicketAttachment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "file_name", nullable = false)
+    @Column(nullable = false)
     private String fileName;
 
-    @Column(name = "file_type")
+    @Column(nullable = false)
     private String fileType;
 
-    @Column(name = "file_url", nullable = false)
-    private String fileUrl;
+    private Long fileSize; // <-- Added field
+
+    @Column(nullable = false)
+    private String filePath; // <-- Added field
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_id", nullable = false)
-    private com.aicustomersupport.demo.cs.model.Ticket ticket;
+    private Ticket ticket;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by_id", nullable = false)
     private User uploadedBy;
 
-    @Column(name = "uploaded_at", nullable = false, updatable = false)
-    private LocalDateTime uploadedAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        this.uploadedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 }

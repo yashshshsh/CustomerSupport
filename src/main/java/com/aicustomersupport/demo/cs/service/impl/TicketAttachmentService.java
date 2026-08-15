@@ -1,284 +1,168 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.model.Ticket;
 import com.aicustomersupport.demo.cs.model.TicketAttachment;
+import com.aicustomersupport.demo.cs.model.User;
 import com.aicustomersupport.demo.cs.repository.TicketAttachmentRepository;
+import com.aicustomersupport.demo.cs.repository.TicketRepository;
+import com.aicustomersupport.demo.cs.repository.UserRepository;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketAttachmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class TicketAttachmentService
-        implements ITicketAttachmentService {
+public class TicketAttachmentService implements ITicketAttachmentService {
 
     @Autowired
-    private TicketAttachmentRepository ticketAttachmentRepository;
+    private TicketAttachmentRepository attachmentRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private final String UPLOAD_DIR = "uploads/";
 
     @Override
-    public Response createAttachment(TicketAttachment attachment) {
-
-        Response response = new Response();
-
+    public Response uploadAttachment(MultipartFile file, Long ticketId, Long uploadedById) {
         try {
-
-            if (attachment.getTicket() == null ||
-                    attachment.getTicket().getId() == null) {
-
-                response.setStatusCode(400);
-                response.setMessage("Ticket is required");
-
-                return response;
+            if (file.isEmpty()) {
+                return Response.builder().statusCode(400).message("Uploaded file is empty").build();
             }
 
-            if (attachment.getFileName() == null ||
-                    attachment.getFileName().isBlank()) {
-
-                response.setStatusCode(400);
-                response.setMessage("File name is required");
-
-                return response;
+            Optional<Ticket> ticketOpt = ticketRepository.findById(ticketId);
+            if (ticketOpt.isEmpty()) {
+                return Response.builder().statusCode(404).message("Ticket not found with id: " + ticketId).build();
             }
 
-            TicketAttachment savedAttachment =
-                    ticketAttachmentRepository.save(attachment);
+            Optional<User> userOpt = userRepository.findById(uploadedById);
+            if (userOpt.isEmpty()) {
+                return Response.builder().statusCode(404).message("User not found with id: " + uploadedById).build();
+            }
 
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Attachment created successfully"
-            );
-            response.setTicketAttachment(savedAttachment);
+            File dir = new File(UPLOAD_DIR);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
 
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(UPLOAD_DIR + fileName);
+
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            TicketAttachment attachment = TicketAttachment.builder()
+                    .fileName(file.getOriginalFilename())
+                    .fileType(file.getContentType())
+                    .fileSize(file.getSize())
+                    .filePath(filePath.toString())
+                    .ticket(ticketOpt.get())
+                    .uploadedBy(userOpt.get())
+                    .build();
+
+            TicketAttachment savedAttachment = attachmentRepository.save(attachment);
+
+            return Response.builder()
+                    .statusCode(200)
+                    .message("File uploaded successfully")
+                    .ticketAttachment(savedAttachment)
+                    .build();
+
+        } catch (IOException e) {
+            return Response.builder().statusCode(500).message("Failed to save file locally: " + e.getMessage()).build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while creating attachment: "
-                            + e.getMessage()
-            );
+            return Response.builder().statusCode(500).message("Error uploading attachment: " + e.getMessage()).build();
         }
-
-        return response;
     }
 
     @Override
     public Response getAttachment(Long id) {
-
-        Response response = new Response();
-
         try {
-
-            Optional<TicketAttachment> attachmentOptional =
-                    ticketAttachmentRepository.findById(id);
-
-            if (attachmentOptional.isEmpty()) {
-
-                response.setStatusCode(400);
-                response.setMessage("Attachment not found");
-
-                return response;
+            Optional<TicketAttachment> attachment = attachmentRepository.findById(id);
+            if (attachment.isPresent()) {
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Attachment retrieved successfully")
+                        .ticketAttachment(attachment.get())
+                        .build();
             }
-
-            response.setStatusCode(200);
-            response.setTicketAttachment(
-                    attachmentOptional.get()
-            );
-
+            return Response.builder().statusCode(404).message("Attachment not found with id: " + id).build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting attachment: "
-                            + e.getMessage()
-            );
+            return Response.builder().statusCode(500).message("Error retrieving attachment: " + e.getMessage()).build();
         }
-
-        return response;
     }
 
     @Override
     public Response getAllAttachments() {
-
-        Response response = new Response();
-
         try {
-
-            List<TicketAttachment> attachments =
-                    ticketAttachmentRepository.findAll();
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Attachments retrieved successfully"
-            );
-            response.setTicketAttachments(attachments);
-
+            List<TicketAttachment> attachments = attachmentRepository.findAll();
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Attachments retrieved successfully")
+                    .ticketAttachments(attachments)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting attachments: "
-                            + e.getMessage()
-            );
+            return Response.builder().statusCode(500).message("Error retrieving attachments: " + e.getMessage()).build();
         }
-
-        return response;
     }
 
     @Override
     public Response getAttachmentsByTicket(Long ticketId) {
-
-        Response response = new Response();
-
         try {
-
-            List<TicketAttachment> attachments =
-                    ticketAttachmentRepository
-                            .findByTicketId(ticketId);
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Ticket attachments retrieved successfully"
-            );
-            response.setTicketAttachments(attachments);
-
+            List<TicketAttachment> attachments = attachmentRepository.findByTicketId(ticketId);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Ticket attachments retrieved successfully")
+                    .ticketAttachments(attachments)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting ticket attachments: "
-                            + e.getMessage()
-            );
+            return Response.builder().statusCode(500).message("Error retrieving ticket attachments: " + e.getMessage()).build();
         }
-
-        return response;
     }
 
     @Override
     public Response getAttachmentsByUser(Long userId) {
-
-        Response response = new Response();
-
         try {
-
-            List<TicketAttachment> attachments =
-                    ticketAttachmentRepository
-                            .findByUploadedById(userId);
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "User attachments retrieved successfully"
-            );
-            response.setTicketAttachments(attachments);
-
+            List<TicketAttachment> attachments = attachmentRepository.findByUploadedById(userId);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("User attachments retrieved successfully")
+                    .ticketAttachments(attachments)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting user attachments: "
-                            + e.getMessage()
-            );
+            return Response.builder().statusCode(500).message("Error retrieving user attachments: " + e.getMessage()).build();
         }
-
-        return response;
-    }
-
-    @Override
-    public Response updateAttachment(
-            TicketAttachment attachment,
-            Long id) {
-
-        Response response = new Response();
-
-        try {
-
-            Optional<TicketAttachment> attachmentOptional =
-                    ticketAttachmentRepository.findById(id);
-
-            if (attachmentOptional.isEmpty()) {
-
-                response.setStatusCode(400);
-                response.setMessage("Attachment not found");
-
-                return response;
-            }
-
-            TicketAttachment existingAttachment =
-                    attachmentOptional.get();
-
-            if (attachment.getFileName() != null) {
-                existingAttachment.setFileName(
-                        attachment.getFileName()
-                );
-            }
-
-            if (attachment.getFileType() != null) {
-                existingAttachment.setFileType(
-                        attachment.getFileType()
-                );
-            }
-
-            if (attachment.getFileUrl() != null) {
-                existingAttachment.setFileUrl(
-                        attachment.getFileUrl()
-                );
-            }
-
-            TicketAttachment updatedAttachment =
-                    ticketAttachmentRepository.save(
-                            existingAttachment
-                    );
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Attachment updated successfully"
-            );
-            response.setTicketAttachment(updatedAttachment);
-
-        } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while updating attachment: "
-                            + e.getMessage()
-            );
-        }
-
-        return response;
     }
 
     @Override
     public Response deleteAttachment(Long id) {
-
-        Response response = new Response();
-
         try {
+            Optional<TicketAttachment> attachmentOpt = attachmentRepository.findById(id);
+            if (attachmentOpt.isPresent()) {
+                TicketAttachment attachment = attachmentOpt.get();
 
-            if (!ticketAttachmentRepository.existsById(id)) {
+                File file = new File(attachment.getFilePath());
+                if (file.exists()) {
+                    file.delete();
+                }
 
-                response.setStatusCode(400);
-                response.setMessage("Attachment not found");
-
-                return response;
+                attachmentRepository.deleteById(id);
+                return Response.builder().statusCode(200).message("Attachment and local file deleted successfully").build();
             }
-
-            ticketAttachmentRepository.deleteById(id);
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Attachment deleted successfully"
-            );
-
+            return Response.builder().statusCode(404).message("Attachment not found with id: " + id).build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while deleting attachment: "
-                            + e.getMessage()
-            );
+            return Response.builder().statusCode(500).message("Error deleting attachment: " + e.getMessage()).build();
         }
-
-        return response;
     }
 }

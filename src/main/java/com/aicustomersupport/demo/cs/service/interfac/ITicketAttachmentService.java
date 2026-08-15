@@ -1,11 +1,11 @@
 package com.aicustomersupport.demo.cs.service.interfac;
 
 import com.aicustomersupport.demo.cs.dto.Response;
-import com.aicustomersupport.demo.cs.model.TicketAttachment;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ITicketAttachmentService {
 
-    Response createAttachment(TicketAttachment attachment);
+    Response uploadAttachment(MultipartFile file, Long ticketId, Long uploadedById);
 
     Response getAttachment(Long id);
 
@@ -14,8 +14,6 @@ public interface ITicketAttachmentService {
     Response getAttachmentsByTicket(Long ticketId);
 
     Response getAttachmentsByUser(Long userId);
-
-    Response updateAttachment(TicketAttachment attachment, Long id);
 
     Response deleteAttachment(Long id);
 }
