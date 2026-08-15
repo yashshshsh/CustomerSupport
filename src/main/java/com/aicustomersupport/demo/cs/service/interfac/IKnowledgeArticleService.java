@@ -12,11 +12,17 @@ public interface IKnowledgeArticleService {
 
     Response getAllArticles(Pageable pageable);
 
-    Response getArticlesByCategory(Long categoryId, Pageable pageable);
+    Response getArticlesByCategory(
+            Long categoryId,
+            Pageable pageable
+    );
 
     Response getActiveArticles(Pageable pageable);
 
-    Response updateArticle(KnowledgeArticleDto articleDto, Long id);
+    Response updateArticle(
+            KnowledgeArticleDto articleDto,
+            Long id
+    );
 
     Response deleteArticle(Long id);
 }

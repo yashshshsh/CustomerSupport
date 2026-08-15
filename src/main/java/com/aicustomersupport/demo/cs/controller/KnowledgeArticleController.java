@@ -14,13 +14,19 @@ public class KnowledgeArticleController {
     @Autowired
     private IKnowledgeArticleService knowledgeArticleService;
 
+
+    // CREATE
     @PostMapping
     public Response createArticle(
             @RequestBody KnowledgeArticleDto articleDto) {
 
-        return knowledgeArticleService.createArticle(articleDto);
+        return knowledgeArticleService.createArticle(
+                articleDto
+        );
     }
 
+
+    // GET BY ID
     @GetMapping("/{id}")
     public Response getArticle(
             @PathVariable Long id) {
@@ -28,14 +34,19 @@ public class KnowledgeArticleController {
         return knowledgeArticleService.getArticle(id);
     }
 
+
+    // GET ALL
     @GetMapping
     public Response getAllArticles(
             Pageable pageable) {
 
-        return knowledgeArticleService
-                .getAllArticles(pageable);
+        return knowledgeArticleService.getAllArticles(
+                pageable
+        );
     }
 
+
+    // GET BY CATEGORY
     @GetMapping("/category/{categoryId}")
     public Response getArticlesByCategory(
             @PathVariable Long categoryId,
@@ -48,14 +59,20 @@ public class KnowledgeArticleController {
                 );
     }
 
+
+    // GET ACTIVE
     @GetMapping("/active")
     public Response getActiveArticles(
             Pageable pageable) {
 
         return knowledgeArticleService
-                .getActiveArticles(pageable);
+                .getActiveArticles(
+                        pageable
+                );
     }
 
+
+    // UPDATE
     @PutMapping("/{id}")
     public Response updateArticle(
             @RequestBody KnowledgeArticleDto articleDto,
@@ -68,11 +85,12 @@ public class KnowledgeArticleController {
                 );
     }
 
+
+    // DELETE
     @DeleteMapping("/{id}")
     public Response deleteArticle(
             @PathVariable Long id) {
 
-        return knowledgeArticleService
-                .deleteArticle(id);
+        return knowledgeArticleService.deleteArticle(id);
     }
 }

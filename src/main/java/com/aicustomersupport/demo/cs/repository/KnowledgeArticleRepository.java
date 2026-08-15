@@ -1,14 +1,20 @@
 package com.aicustomersupport.demo.cs.repository;
 
 import com.aicustomersupport.demo.cs.model.KnowledgeArticle;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.List;
 
 public interface KnowledgeArticleRepository
         extends JpaRepository<KnowledgeArticle, Long> {
 
-    List<KnowledgeArticle> findByCategoryId(Long categoryId);
+    Page<KnowledgeArticle> findByCategoryId(
+            Long categoryId,
+            Pageable pageable
+    );
 
-    List<KnowledgeArticle> findByActive(boolean active);
+    Page<KnowledgeArticle> findByActive(
+            boolean active,
+            Pageable pageable
+    );
 }
