@@ -1,0 +1,17 @@
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\Application.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\dto\LoginRequestDto.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\dto\Response.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\Category.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\KnowledgeArticle.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\Role.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\Ticket.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\TicketAttachment.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\TicketFeedback.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\TicketMessage.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\TicketPriority.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\TicketStatus.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\TicketStatusHistory.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\model\User.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\repository\UserRepository.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\service\impl\UserService.java
+C:\Users\yashs\OneDrive\Desktop\AICustomerSupport\demo.CS\src\main\java\com\aicustomersupport\demo\cs\service\interfac\IUserService.java
