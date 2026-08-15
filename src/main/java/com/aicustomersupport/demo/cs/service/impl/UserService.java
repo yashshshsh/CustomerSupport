@@ -8,6 +8,7 @@ import com.aicustomersupport.demo.cs.service.interfac.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -18,169 +19,140 @@ public class UserService implements IUserService {
 
     @Override
     public Response registerUser(User user) {
-
         Response response = new Response();
-
         try {
-
             if (userRepository.existsByEmail(user.getEmail())) {
-                response.setStatusCode(400);
-                response.setMessage("Email already registered");
-                return response;
+                return Response.builder()
+                        .statusCode(400)
+                        .message("Email is already in use")
+                        .build();
             }
-
             User savedUser = userRepository.save(user);
-
-            response.setStatusCode(200);
-            response.setMessage("User registered successfully");
-            response.setUser(savedUser);
-
+            return Response.builder()
+                    .statusCode(200)
+                    .message("User registered successfully")
+                    .user(savedUser)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage("Error while registering user: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error registering user: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response loginUser(LoginRequestDto loginRequest) {
-
-        Response response = new Response();
-
         try {
-
-            Optional<User> userOptional =
-                    userRepository.findByEmail(loginRequest.getEmail());
-
-            if (userOptional.isEmpty()) {
-                response.setStatusCode(400);
-                response.setMessage("User not found");
-                return response;
+            Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
+            if (userOptional.isPresent() && userOptional.get().getPassword().equals(loginRequest.getPassword())) {
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Login successful")
+                        .user(userOptional.get())
+                        .build();
             }
-
-            User user = userOptional.get();
-
-            if (!user.getPassword().equals(loginRequest.getPassword())) {
-                response.setStatusCode(400);
-                response.setMessage("Invalid password");
-                return response;
-            }
-
-            response.setStatusCode(200);
-            response.setMessage("Login successful");
-            response.setUser(user);
-
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Invalid email or password")
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage("Error while logging in: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error during login: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getUser(Long id) {
-
-        Response response = new Response();
-
         try {
-
             Optional<User> userOptional = userRepository.findById(id);
-
-            if (userOptional.isEmpty()) {
-                response.setStatusCode(400);
-                response.setMessage("User not found");
-                return response;
+            if (userOptional.isPresent()) {
+                return Response.builder()
+                        .statusCode(200)
+                        .message("User retrieved successfully")
+                        .user(userOptional.get())
+                        .build();
             }
-
-            response.setStatusCode(200);
-            response.setUser(userOptional.get());
-
+            return Response.builder()
+                    .statusCode(404)
+                    .message("User not found with id: " + id)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage("Error while getting user: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving user: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
-    public Response updateUser(User user, Long id) {
-
-        Response response = new Response();
-
+    public Response getAllUsers() {
         try {
-
-            Optional<User> existingUserOptional =
-                    userRepository.findById(id);
-
-            if (existingUserOptional.isEmpty()) {
-                response.setStatusCode(400);
-                response.setMessage("User not found");
-                return response;
-            }
-
-            User existingUser = existingUserOptional.get();
-
-            if (user.getName() != null) {
-                existingUser.setName(user.getName());
-            }
-
-            if (user.getEmail() != null) {
-                existingUser.setEmail(user.getEmail());
-            }
-
-            if (user.getPassword() != null) {
-                existingUser.setPassword(user.getPassword());
-            }
-
-            if (user.getRole() != null) {
-                existingUser.setRole(user.getRole());
-            }
-
-            User updatedUser = userRepository.save(existingUser);
-
-            response.setStatusCode(200);
-            response.setMessage("User updated successfully");
-            response.setUser(updatedUser);
-
+            List<User> users = userRepository.findAll();
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Users retrieved successfully")
+                    .users(users)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage("Error while updating user: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving users: " + e.getMessage())
+                    .build();
         }
+    }
 
-        return response;
+    @Override
+    public Response updateUser(User updatedUser, Long id) {
+        try {
+            Optional<User> existingUserOptional = userRepository.findById(id);
+            if (existingUserOptional.isPresent()) {
+                User existingUser = existingUserOptional.get();
+
+                if (updatedUser.getName() != null) existingUser.setName(updatedUser.getName());
+                if (updatedUser.getEmail() != null) existingUser.setEmail(updatedUser.getEmail());
+                if (updatedUser.getRole() != null) existingUser.setRole(updatedUser.getRole());
+
+                User savedUser = userRepository.save(existingUser);
+                return Response.builder()
+                        .statusCode(200)
+                        .message("User updated successfully")
+                        .user(savedUser)
+                        .build();
+            }
+            return Response.builder()
+                    .statusCode(404)
+                    .message("User not found with id: " + id)
+                    .build();
+        } catch (Exception e) {
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error updating user: " + e.getMessage())
+                    .build();
+        }
     }
 
     @Override
     public Response deleteUser(Long id) {
-
-        Response response = new Response();
-
         try {
-
-            if (!userRepository.existsById(id)) {
-                response.setStatusCode(400);
-                response.setMessage("User not found");
-                return response;
+            if (userRepository.existsById(id)) {
+                userRepository.deleteById(id);
+                return Response.builder()
+                        .statusCode(200)
+                        .message("User deleted successfully")
+                        .build();
             }
-
-            userRepository.deleteById(id);
-
-            response.setStatusCode(200);
-            response.setMessage("User deleted successfully");
-
+            return Response.builder()
+                    .statusCode(404)
+                    .message("User not found with id: " + id)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage("Error while deleting user: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error deleting user: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 }

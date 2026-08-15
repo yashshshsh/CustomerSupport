@@ -12,6 +12,8 @@ public interface IUserService {
 
     Response getUser(Long id);
 
+    Response getAllUsers(); // <-- Added
+
     Response updateUser(User user, Long id);
 
     Response deleteUser(Long id);
