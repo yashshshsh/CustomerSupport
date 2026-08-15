@@ -207,27 +207,35 @@ public class TicketService implements ITicketService {
                 existingTicket.setCategory(categoryOpt.get());
             }
 
-            // 5. Status Update & Automatic TicketStatusHistory Creation
+            // 5. Status Update & Strict Validation for TicketStatusHistory
             if (request.getStatus() != null && !request.getStatus().equals(existingTicket.getStatus())) {
+
+                // Strict validation: changedByUserId must be present when changing status
+                if (request.getChangedByUserId() == null) {
+                    return Response.builder()
+                            .statusCode(400)
+                            .message("changedByUserId is required when changing ticket status")
+                            .build();
+                }
+
+                Optional<User> changedByUserOpt = userRepository.findById(request.getChangedByUserId());
+                if (changedByUserOpt.isEmpty()) {
+                    return Response.builder()
+                            .statusCode(400)
+                            .message("User who changed the status was not found with id: " + request.getChangedByUserId())
+                            .build();
+                }
+
                 TicketStatus oldStatus = existingTicket.getStatus();
                 TicketStatus newStatus = request.getStatus();
 
                 existingTicket.setStatus(newStatus);
 
-                // Find user who performed the change
-                User changedBy = null;
-                if (request.getChangedByUserId() != null) {
-                    Optional<User> changedByUserOpt = userRepository.findById(request.getChangedByUserId());
-                    if (changedByUserOpt.isPresent()) {
-                        changedBy = changedByUserOpt.get();
-                    }
-                }
-
                 TicketStatusHistory history = TicketStatusHistory.builder()
                         .ticket(existingTicket)
                         .oldStatus(oldStatus)
                         .newStatus(newStatus)
-                        .changedBy(changedBy)
+                        .changedBy(changedByUserOpt.get())
                         .build();
 
                 ticketStatusHistoryRepository.save(history);
