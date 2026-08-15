@@ -65,7 +65,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             response.setStatusCode(200);
             response.setMessage("Knowledge article created successfully");
-            response.setKnowledgeArticleDto(convertToDto(savedArticle));
+            response.setKnowledgeArticle(convertToDto(savedArticle));
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Error occurred while creating article: " + e.getMessage());
@@ -86,7 +86,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             response.setStatusCode(200);
             response.setMessage("Knowledge article retrieved successfully");
-            response.setKnowledgeArticleDto(convertToDto(articleOptional.get()));
+            response.setKnowledgeArticle(convertToDto(articleOptional.get()));
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Error occurred while fetching article: " + e.getMessage());
@@ -106,7 +106,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             response.setStatusCode(200);
             response.setMessage("Knowledge articles retrieved successfully");
-            response.setKnowledgeArticleDtoList(articleDtos);
+            response.setKnowledgeArticles(articleDtos);
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Error occurred while fetching articles: " + e.getMessage());
@@ -132,7 +132,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             response.setStatusCode(200);
             response.setMessage("Articles for category retrieved successfully");
-            response.setKnowledgeArticleDtoList(articleDtos);
+            response.setKnowledgeArticles(articleDtos);
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Error occurred while fetching articles by category: " + e.getMessage());
@@ -152,7 +152,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             response.setStatusCode(200);
             response.setMessage("Active articles retrieved successfully");
-            response.setKnowledgeArticleDtoList(articleDtos);
+            response.setKnowledgeArticles(articleDtos);
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Error occurred while fetching active articles: " + e.getMessage());
@@ -197,7 +197,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             response.setStatusCode(200);
             response.setMessage("Knowledge article updated successfully");
-            response.setKnowledgeArticleDto(convertToDto(updatedArticle));
+            response.setKnowledgeArticle(convertToDto(updatedArticle));
         } catch (Exception e) {
             response.setStatusCode(500);
             response.setMessage("Error occurred while updating article: " + e.getMessage());
