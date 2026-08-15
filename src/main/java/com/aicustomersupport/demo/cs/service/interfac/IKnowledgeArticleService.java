@@ -1,21 +1,22 @@
 package com.aicustomersupport.demo.cs.service.interfac;
 
+import com.aicustomersupport.demo.cs.dto.KnowledgeArticleDto;
 import com.aicustomersupport.demo.cs.dto.Response;
-import com.aicustomersupport.demo.cs.model.KnowledgeArticle;
+import org.springframework.data.domain.Pageable;
 
 public interface IKnowledgeArticleService {
 
-    Response createArticle(KnowledgeArticle article);
+    Response createArticle(KnowledgeArticleDto articleDto);
 
     Response getArticle(Long id);
 
-    Response getAllArticles();
+    Response getAllArticles(Pageable pageable);
 
-    Response getArticlesByCategory(Long categoryId);
+    Response getArticlesByCategory(Long categoryId, Pageable pageable);
 
-    Response getActiveArticles();
+    Response getActiveArticles(Pageable pageable);
 
-    Response updateArticle(KnowledgeArticle article, Long id);
+    Response updateArticle(KnowledgeArticleDto articleDto, Long id);
 
     Response deleteArticle(Long id);
 }

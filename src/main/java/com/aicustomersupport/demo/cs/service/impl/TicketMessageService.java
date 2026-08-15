@@ -1,6 +1,7 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.dto.TicketMessageDto;
 import com.aicustomersupport.demo.cs.model.TicketMessage;
 import com.aicustomersupport.demo.cs.repository.TicketMessageRepository;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketMessageService;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TicketMessageService implements ITicketMessageService {
@@ -27,14 +29,17 @@ public class TicketMessageService implements ITicketMessageService {
                     ticketMessageRepository.save(ticketMessage);
 
             response.setStatusCode(200);
-            response.setMessage("Message created successfully");
-            response.setTicketMessage(savedMessage);
+            response.setMessage("Ticket message created successfully");
+            response.setTicketMessage(
+                    convertToDto(savedMessage)
+            );
 
         } catch (Exception e) {
 
             response.setStatusCode(500);
             response.setMessage(
-                    "Error while creating message: " + e.getMessage()
+                    "Error while creating ticket message: "
+                            + e.getMessage()
             );
         }
 
@@ -53,20 +58,26 @@ public class TicketMessageService implements ITicketMessageService {
 
             if (messageOptional.isEmpty()) {
 
-                response.setStatusCode(400);
-                response.setMessage("Message not found");
+                response.setStatusCode(404);
+                response.setMessage("Ticket message not found");
 
                 return response;
             }
 
             response.setStatusCode(200);
-            response.setTicketMessage(messageOptional.get());
+            response.setMessage(
+                    "Ticket message retrieved successfully"
+            );
+            response.setTicketMessage(
+                    convertToDto(messageOptional.get())
+            );
 
         } catch (Exception e) {
 
             response.setStatusCode(500);
             response.setMessage(
-                    "Error while getting message: " + e.getMessage()
+                    "Error while getting ticket message: "
+                            + e.getMessage()
             );
         }
 
@@ -83,15 +94,23 @@ public class TicketMessageService implements ITicketMessageService {
             List<TicketMessage> messages =
                     ticketMessageRepository.findAll();
 
+            List<TicketMessageDto> messageDtos =
+                    messages.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
+
             response.setStatusCode(200);
-            response.setMessage("Messages retrieved successfully");
-            response.setTicketMessages(messages);
+            response.setMessage(
+                    "Ticket messages retrieved successfully"
+            );
+            response.setTicketMessages(messageDtos);
 
         } catch (Exception e) {
 
             response.setStatusCode(500);
             response.setMessage(
-                    "Error while getting messages: " + e.getMessage()
+                    "Error while getting ticket messages: "
+                            + e.getMessage()
             );
         }
 
@@ -106,13 +125,19 @@ public class TicketMessageService implements ITicketMessageService {
         try {
 
             List<TicketMessage> messages =
-                    ticketMessageRepository.findByTicketId(ticketId);
+                    ticketMessageRepository
+                            .findByTicketId(ticketId);
+
+            List<TicketMessageDto> messageDtos =
+                    messages.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
 
             response.setStatusCode(200);
             response.setMessage(
                     "Ticket messages retrieved successfully"
             );
-            response.setTicketMessages(messages);
+            response.setTicketMessages(messageDtos);
 
         } catch (Exception e) {
 
@@ -134,13 +159,19 @@ public class TicketMessageService implements ITicketMessageService {
         try {
 
             List<TicketMessage> messages =
-                    ticketMessageRepository.findBySenderId(senderId);
+                    ticketMessageRepository
+                            .findBySenderId(senderId);
+
+            List<TicketMessageDto> messageDtos =
+                    messages.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
 
             response.setStatusCode(200);
             response.setMessage(
                     "Sender messages retrieved successfully"
             );
-            response.setTicketMessages(messages);
+            response.setTicketMessages(messageDtos);
 
         } catch (Exception e) {
 
@@ -168,8 +199,8 @@ public class TicketMessageService implements ITicketMessageService {
 
             if (messageOptional.isEmpty()) {
 
-                response.setStatusCode(400);
-                response.setMessage("Message not found");
+                response.setStatusCode(404);
+                response.setMessage("Ticket message not found");
 
                 return response;
             }
@@ -187,14 +218,18 @@ public class TicketMessageService implements ITicketMessageService {
                     ticketMessageRepository.save(existingMessage);
 
             response.setStatusCode(200);
-            response.setMessage("Message updated successfully");
-            response.setTicketMessage(updatedMessage);
+            response.setMessage(
+                    "Ticket message updated successfully"
+            );
+            response.setTicketMessage(
+                    convertToDto(updatedMessage)
+            );
 
         } catch (Exception e) {
 
             response.setStatusCode(500);
             response.setMessage(
-                    "Error while updating message: "
+                    "Error while updating ticket message: "
                             + e.getMessage()
             );
         }
@@ -211,8 +246,8 @@ public class TicketMessageService implements ITicketMessageService {
 
             if (!ticketMessageRepository.existsById(id)) {
 
-                response.setStatusCode(400);
-                response.setMessage("Message not found");
+                response.setStatusCode(404);
+                response.setMessage("Ticket message not found");
 
                 return response;
             }
@@ -220,16 +255,35 @@ public class TicketMessageService implements ITicketMessageService {
             ticketMessageRepository.deleteById(id);
 
             response.setStatusCode(200);
-            response.setMessage("Message deleted successfully");
+            response.setMessage(
+                    "Ticket message deleted successfully"
+            );
 
         } catch (Exception e) {
 
             response.setStatusCode(500);
             response.setMessage(
-                    "Error while deleting message: " + e.getMessage()
+                    "Error while deleting ticket message: "
+                            + e.getMessage()
             );
         }
 
         return response;
+    }
+
+    private TicketMessageDto convertToDto(
+            TicketMessage ticketMessage) {
+
+        return new TicketMessageDto(
+                ticketMessage.getId(),
+                ticketMessage.getTicket() != null
+                        ? ticketMessage.getTicket().getId()
+                        : null,
+                ticketMessage.getSender() != null
+                        ? ticketMessage.getSender().getId()
+                        : null,
+                ticketMessage.getMessage(),
+                ticketMessage.getCreatedAt()
+        );
     }
 }

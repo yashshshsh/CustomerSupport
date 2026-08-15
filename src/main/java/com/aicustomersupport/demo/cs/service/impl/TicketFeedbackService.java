@@ -1,6 +1,7 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.dto.TicketFeedbackDto;
 import com.aicustomersupport.demo.cs.model.TicketFeedback;
 import com.aicustomersupport.demo.cs.repository.TicketFeedbackRepository;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketFeedbackService;
@@ -9,268 +10,158 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TicketFeedbackService implements ITicketFeedbackService {
 
     @Autowired
-    private TicketFeedbackRepository ticketFeedbackRepository;
+    private TicketFeedbackRepository feedbackRepository;
 
     @Override
     public Response createFeedback(TicketFeedback feedback) {
-
-        Response response = new Response();
-
         try {
-
-            if (feedback.getRating() == null ||
-                    feedback.getRating() < 1 ||
-                    feedback.getRating() > 5) {
-
-                response.setStatusCode(400);
-                response.setMessage("Rating must be between 1 and 5");
-
-                return response;
-            }
-
-            if (feedback.getTicket() == null ||
-                    feedback.getTicket().getId() == null) {
-
-                response.setStatusCode(400);
-                response.setMessage("Ticket is required");
-
-                return response;
-            }
-
-            if (ticketFeedbackRepository
-                    .existsByTicketId(feedback.getTicket().getId())) {
-
-                response.setStatusCode(400);
-                response.setMessage(
-                        "Feedback already exists for this ticket"
-                );
-
-                return response;
-            }
-
-            TicketFeedback savedFeedback =
-                    ticketFeedbackRepository.save(feedback);
-
-            response.setStatusCode(200);
-            response.setMessage("Feedback created successfully");
-            response.setTicketFeedback(savedFeedback);
-
+            TicketFeedback savedFeedback = feedbackRepository.save(feedback);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Ticket feedback created successfully")
+                    .ticketFeedback(convertToDto(savedFeedback))
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while creating feedback: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error creating feedback: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getFeedback(Long id) {
-
-        Response response = new Response();
-
         try {
-
-            Optional<TicketFeedback> feedbackOptional =
-                    ticketFeedbackRepository.findById(id);
-
-            if (feedbackOptional.isEmpty()) {
-
-                response.setStatusCode(400);
-                response.setMessage("Feedback not found");
-
-                return response;
+            Optional<TicketFeedback> feedbackOpt = feedbackRepository.findById(id);
+            if (feedbackOpt.isPresent()) {
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Feedback retrieved successfully")
+                        .ticketFeedback(convertToDto(feedbackOpt.get()))
+                        .build();
             }
-
-            response.setStatusCode(200);
-            response.setTicketFeedback(
-                    feedbackOptional.get()
-            );
-
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Feedback not found with id: " + id)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting feedback: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving feedback: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getAllFeedback() {
-
-        Response response = new Response();
-
         try {
+            List<TicketFeedback> feedbacks = feedbackRepository.findAll();
+            List<TicketFeedbackDto> feedbackDtos = feedbacks.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
 
-            List<TicketFeedback> feedbackList =
-                    ticketFeedbackRepository.findAll();
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Feedback retrieved successfully"
-            );
-            response.setTicketFeedbacks(feedbackList);
-
+            return Response.builder()
+                    .statusCode(200)
+                    .message("All feedback retrieved successfully")
+                    .ticketFeedbacks(feedbackDtos)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting feedback: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving all feedback: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getFeedbackByTicket(Long ticketId) {
-
-        Response response = new Response();
-
         try {
-
-            Optional<TicketFeedback> feedbackOptional =
-                    ticketFeedbackRepository.findByTicketId(ticketId);
-
-            if (feedbackOptional.isEmpty()) {
-
-                response.setStatusCode(400);
-                response.setMessage(
-                        "Feedback not found for this ticket"
-                );
-
-                return response;
+            Optional<TicketFeedback> feedbackOpt = feedbackRepository.findByTicketId(ticketId);
+            if (feedbackOpt.isPresent()) {
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Ticket feedback retrieved successfully")
+                        .ticketFeedback(convertToDto(feedbackOpt.get()))
+                        .build();
             }
-
-            response.setStatusCode(200);
-            response.setTicketFeedback(
-                    feedbackOptional.get()
-            );
-
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Feedback not found for ticket id: " + ticketId)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting ticket feedback: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving ticket feedback: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
-    public Response updateFeedback(
-            TicketFeedback feedback,
-            Long id) {
-
-        Response response = new Response();
-
+    public Response updateFeedback(TicketFeedback feedback, Long id) {
         try {
+            Optional<TicketFeedback> existingOpt = feedbackRepository.findById(id);
+            if (existingOpt.isPresent()) {
+                TicketFeedback existingFeedback = existingOpt.get();
 
-            Optional<TicketFeedback> feedbackOptional =
-                    ticketFeedbackRepository.findById(id);
+                if (feedback.getRating() != null) existingFeedback.setRating(feedback.getRating());
+                if (feedback.getComment() != null) existingFeedback.setComment(feedback.getComment());
 
-            if (feedbackOptional.isEmpty()) {
-
-                response.setStatusCode(400);
-                response.setMessage("Feedback not found");
-
-                return response;
+                TicketFeedback updatedFeedback = feedbackRepository.save(existingFeedback);
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Feedback updated successfully")
+                        .ticketFeedback(convertToDto(updatedFeedback))
+                        .build();
             }
-
-            TicketFeedback existingFeedback =
-                    feedbackOptional.get();
-
-            if (feedback.getRating() != null) {
-
-                if (feedback.getRating() < 1 ||
-                        feedback.getRating() > 5) {
-
-                    response.setStatusCode(400);
-                    response.setMessage(
-                            "Rating must be between 1 and 5"
-                    );
-
-                    return response;
-                }
-
-                existingFeedback.setRating(
-                        feedback.getRating()
-                );
-            }
-
-            if (feedback.getComment() != null) {
-                existingFeedback.setComment(
-                        feedback.getComment()
-                );
-            }
-
-            TicketFeedback updatedFeedback =
-                    ticketFeedbackRepository.save(
-                            existingFeedback
-                    );
-
-            response.setStatusCode(200);
-            response.setMessage("Feedback updated successfully");
-            response.setTicketFeedback(updatedFeedback);
-
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Feedback not found with id: " + id)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while updating feedback: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error updating feedback: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response deleteFeedback(Long id) {
-
-        Response response = new Response();
-
         try {
-
-            if (!ticketFeedbackRepository.existsById(id)) {
-
-                response.setStatusCode(400);
-                response.setMessage("Feedback not found");
-
-                return response;
+            if (feedbackRepository.existsById(id)) {
+                feedbackRepository.deleteById(id);
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Feedback deleted successfully")
+                        .build();
             }
-
-            ticketFeedbackRepository.deleteById(id);
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Feedback deleted successfully"
-            );
-
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Feedback not found with id: " + id)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while deleting feedback: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error deleting feedback: " + e.getMessage())
+                    .build();
         }
+    }
 
-        return response;
+    // Helper method to convert Entity -> DTO safely
+    private TicketFeedbackDto convertToDto(TicketFeedback feedback) {
+        return TicketFeedbackDto.builder()
+                .id(feedback.getId())
+                .rating(feedback.getRating())
+                .comment(feedback.getComment())
+                .createdAt(feedback.getCreatedAt())
+                .ticketId(feedback.getTicket() != null ? feedback.getTicket().getId() : null)
+                .customerId(feedback.getCustomer() != null ? feedback.getCustomer().getId() : null)
+                .build();
     }
 }

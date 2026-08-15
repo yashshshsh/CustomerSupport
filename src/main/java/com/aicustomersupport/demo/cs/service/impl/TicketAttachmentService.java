@@ -1,6 +1,7 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.dto.TicketAttachmentDto;
 import com.aicustomersupport.demo.cs.model.Ticket;
 import com.aicustomersupport.demo.cs.model.TicketAttachment;
 import com.aicustomersupport.demo.cs.model.User;
@@ -20,6 +21,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TicketAttachmentService implements ITicketAttachmentService {
@@ -76,7 +78,7 @@ public class TicketAttachmentService implements ITicketAttachmentService {
             return Response.builder()
                     .statusCode(200)
                     .message("File uploaded successfully")
-                    .ticketAttachment(savedAttachment)
+                    .ticketAttachment(convertToDto(savedAttachment))
                     .build();
 
         } catch (IOException e) {
@@ -89,12 +91,12 @@ public class TicketAttachmentService implements ITicketAttachmentService {
     @Override
     public Response getAttachment(Long id) {
         try {
-            Optional<TicketAttachment> attachment = attachmentRepository.findById(id);
-            if (attachment.isPresent()) {
+            Optional<TicketAttachment> attachmentOpt = attachmentRepository.findById(id);
+            if (attachmentOpt.isPresent()) {
                 return Response.builder()
                         .statusCode(200)
                         .message("Attachment retrieved successfully")
-                        .ticketAttachment(attachment.get())
+                        .ticketAttachment(convertToDto(attachmentOpt.get()))
                         .build();
             }
             return Response.builder().statusCode(404).message("Attachment not found with id: " + id).build();
@@ -107,10 +109,14 @@ public class TicketAttachmentService implements ITicketAttachmentService {
     public Response getAllAttachments() {
         try {
             List<TicketAttachment> attachments = attachmentRepository.findAll();
+            List<TicketAttachmentDto> attachmentDtos = attachments.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+
             return Response.builder()
                     .statusCode(200)
                     .message("Attachments retrieved successfully")
-                    .ticketAttachments(attachments)
+                    .ticketAttachments(attachmentDtos)
                     .build();
         } catch (Exception e) {
             return Response.builder().statusCode(500).message("Error retrieving attachments: " + e.getMessage()).build();
@@ -121,10 +127,14 @@ public class TicketAttachmentService implements ITicketAttachmentService {
     public Response getAttachmentsByTicket(Long ticketId) {
         try {
             List<TicketAttachment> attachments = attachmentRepository.findByTicketId(ticketId);
+            List<TicketAttachmentDto> attachmentDtos = attachments.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+
             return Response.builder()
                     .statusCode(200)
                     .message("Ticket attachments retrieved successfully")
-                    .ticketAttachments(attachments)
+                    .ticketAttachments(attachmentDtos)
                     .build();
         } catch (Exception e) {
             return Response.builder().statusCode(500).message("Error retrieving ticket attachments: " + e.getMessage()).build();
@@ -135,10 +145,14 @@ public class TicketAttachmentService implements ITicketAttachmentService {
     public Response getAttachmentsByUser(Long userId) {
         try {
             List<TicketAttachment> attachments = attachmentRepository.findByUploadedById(userId);
+            List<TicketAttachmentDto> attachmentDtos = attachments.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+
             return Response.builder()
                     .statusCode(200)
                     .message("User attachments retrieved successfully")
-                    .ticketAttachments(attachments)
+                    .ticketAttachments(attachmentDtos)
                     .build();
         } catch (Exception e) {
             return Response.builder().statusCode(500).message("Error retrieving user attachments: " + e.getMessage()).build();
@@ -164,5 +178,18 @@ public class TicketAttachmentService implements ITicketAttachmentService {
         } catch (Exception e) {
             return Response.builder().statusCode(500).message("Error deleting attachment: " + e.getMessage()).build();
         }
+    }
+
+    private TicketAttachmentDto convertToDto(TicketAttachment attachment) {
+        return TicketAttachmentDto.builder()
+                .id(attachment.getId())
+                .fileName(attachment.getFileName())
+                .fileType(attachment.getFileType())
+                .fileSize(attachment.getFileSize())
+                .filePath(attachment.getFilePath())
+                .ticketId(attachment.getTicket() != null ? attachment.getTicket().getId() : null)
+                .uploadedById(attachment.getUploadedBy() != null ? attachment.getUploadedBy().getId() : null)
+                .createdAt(attachment.getCreatedAt())
+                .build();
     }
 }

@@ -12,7 +12,7 @@ public interface IUserService {
 
     Response getUser(Long id);
 
-    Response getAllUsers(); // <-- Added
+    Response getAllUsers();
 
     Response updateUser(User user, Long id);
 

@@ -1,13 +1,5 @@
 package com.aicustomersupport.demo.cs.dto;
 
-import com.aicustomersupport.demo.cs.model.Category;
-import com.aicustomersupport.demo.cs.model.KnowledgeArticle;
-import com.aicustomersupport.demo.cs.model.Ticket;
-import com.aicustomersupport.demo.cs.model.TicketAttachment;
-import com.aicustomersupport.demo.cs.model.TicketFeedback;
-import com.aicustomersupport.demo.cs.model.TicketMessage;
-import com.aicustomersupport.demo.cs.model.TicketStatusHistory;
-import com.aicustomersupport.demo.cs.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,38 +17,37 @@ public class Response {
     private String message;
 
     // User responses
-    private User user;
-    private List<User> users;
+    private UserDto user;
+    private List<UserDto> users;
 
     // Ticket responses
-    private Ticket ticket;
-    private List<Ticket> tickets;
+    private TicketDto ticket;
+    private List<TicketDto> tickets;
 
-    // Category responses
-    private Category category;
-    private List<Category> categories;
+    // Category responses (Updated to DTO)
+    private CategoryDto category;
+    private List<CategoryDto> categories;
 
     // Ticket Status History responses
-    private TicketStatusHistory ticketStatusHistory;
-    private List<TicketStatusHistory> ticketStatusHistories;
+    private TicketStatusHistoryDto ticketStatusHistory;
+    private List<TicketStatusHistoryDto> ticketStatusHistories;
 
     // Ticket Message responses
-    private TicketMessage ticketMessage;
-    private List<TicketMessage> ticketMessages;
+    private TicketMessageDto ticketMessage;
+    private List<TicketMessageDto> ticketMessages;
 
     // Ticket Feedback responses
-    private TicketFeedback ticketFeedback;
-    private List<TicketFeedback> ticketFeedbacks;
+    private TicketFeedbackDto ticketFeedback;
+    private List<TicketFeedbackDto> ticketFeedbacks;
 
     // Ticket Attachment responses
-    private TicketAttachment ticketAttachment;
-    private List<TicketAttachment> ticketAttachments;
+    private TicketAttachmentDto ticketAttachment;
+    private List<TicketAttachmentDto> ticketAttachments;
 
     // Knowledge Article responses
-    private KnowledgeArticle knowledgeArticle;
-    private List<KnowledgeArticle> knowledgeArticles;
+    private KnowledgeArticleDto knowledgeArticle;
+    private List<KnowledgeArticleDto> knowledgeArticles;
 
-    // Convenience constructor for simple status + message responses
     public Response(int statusCode, String message) {
         this.statusCode = statusCode;
         this.message = message;

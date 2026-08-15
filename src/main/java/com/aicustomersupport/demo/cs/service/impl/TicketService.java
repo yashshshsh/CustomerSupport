@@ -1,15 +1,24 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.dto.TicketDto;
 import com.aicustomersupport.demo.cs.dto.TicketUpdateRequestDto;
-import com.aicustomersupport.demo.cs.model.*;
-import com.aicustomersupport.demo.cs.repository.*;
+import com.aicustomersupport.demo.cs.model.Category;
+import com.aicustomersupport.demo.cs.model.Ticket;
+import com.aicustomersupport.demo.cs.model.TicketStatus;
+import com.aicustomersupport.demo.cs.model.TicketStatusHistory;
+import com.aicustomersupport.demo.cs.model.User;
+import com.aicustomersupport.demo.cs.repository.CategoryRepository;
+import com.aicustomersupport.demo.cs.repository.TicketRepository;
+import com.aicustomersupport.demo.cs.repository.TicketStatusHistoryRepository;
+import com.aicustomersupport.demo.cs.repository.UserRepository;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TicketService implements ITicketService {
@@ -18,263 +27,438 @@ public class TicketService implements ITicketService {
     private TicketRepository ticketRepository;
 
     @Autowired
+    private TicketStatusHistoryRepository ticketStatusHistoryRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private CategoryRepository categoryRepository;
 
-    @Autowired
-    private TicketStatusHistoryRepository ticketStatusHistoryRepository;
-
     @Override
     public Response createTicket(Ticket ticket) {
+
+        Response response = new Response();
+
         try {
-            if (ticket.getStatus() == null) {
-                ticket.setStatus(TicketStatus.OPEN);
-            }
-            if (ticket.getPriority() == null) {
-                ticket.setPriority(TicketPriority.MEDIUM);
-            }
 
             Ticket savedTicket = ticketRepository.save(ticket);
-            return Response.builder()
-                    .statusCode(200)
-                    .message("Ticket created successfully")
-                    .ticket(savedTicket)
-                    .build();
+
+            response.setStatusCode(200);
+            response.setMessage("Ticket created successfully");
+            response.setTicket(convertToDto(savedTicket));
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error occurred while creating ticket: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while creating ticket: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response getTicket(Long id) {
+
+        Response response = new Response();
+
         try {
-            Optional<Ticket> ticketOptional = ticketRepository.findById(id);
-            if (ticketOptional.isPresent()) {
-                return Response.builder()
-                        .statusCode(200)
-                        .message("Ticket retrieved successfully")
-                        .ticket(ticketOptional.get())
-                        .build();
+
+            Optional<Ticket> ticketOptional =
+                    ticketRepository.findById(id);
+
+            if (ticketOptional.isEmpty()) {
+
+                response.setStatusCode(404);
+                response.setMessage("Ticket not found");
+
+                return response;
             }
-            return Response.builder()
-                    .statusCode(404)
-                    .message("Ticket not found with id: " + id)
-                    .build();
+
+            response.setStatusCode(200);
+            response.setMessage("Ticket retrieved successfully");
+            response.setTicket(
+                    convertToDto(ticketOptional.get())
+            );
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error occurred while retrieving ticket: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while getting ticket: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response getAllTickets() {
+
+        Response response = new Response();
+
         try {
-            List<Ticket> tickets = ticketRepository.findAll();
-            return Response.builder()
-                    .statusCode(200)
-                    .message("Tickets fetched successfully")
-                    .tickets(tickets)
-                    .build();
+
+            List<Ticket> tickets =
+                    ticketRepository.findAll();
+
+            List<TicketDto> ticketDtos =
+                    tickets.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
+
+            response.setStatusCode(200);
+            response.setMessage("Tickets retrieved successfully");
+            response.setTickets(ticketDtos);
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error occurred while fetching tickets: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while getting tickets: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response getTicketsByCustomer(Long customerId) {
+
+        Response response = new Response();
+
         try {
-            List<Ticket> tickets = ticketRepository.findByCustomerId(customerId);
-            return Response.builder()
-                    .statusCode(200)
-                    .message("Customer tickets fetched successfully")
-                    .tickets(tickets)
-                    .build();
+
+            List<Ticket> tickets =
+                    ticketRepository.findByCustomerId(customerId);
+
+            List<TicketDto> ticketDtos =
+                    tickets.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
+
+            response.setStatusCode(200);
+            response.setMessage(
+                    "Customer tickets retrieved successfully"
+            );
+            response.setTickets(ticketDtos);
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error occurred while fetching customer tickets: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while getting customer tickets: "
+                            + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response getTicketsByAgent(Long agentId) {
+
+        Response response = new Response();
+
         try {
-            List<Ticket> tickets = ticketRepository.findByAssignedAgentId(agentId);
-            return Response.builder()
-                    .statusCode(200)
-                    .message("Agent tickets fetched successfully")
-                    .tickets(tickets)
-                    .build();
+
+            List<Ticket> tickets =
+                    ticketRepository.findByAssignedAgentId(agentId);
+
+            List<TicketDto> ticketDtos =
+                    tickets.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
+
+            response.setStatusCode(200);
+            response.setMessage(
+                    "Agent tickets retrieved successfully"
+            );
+            response.setTickets(ticketDtos);
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error occurred while fetching agent tickets: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while getting agent tickets: "
+                            + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response getTicketsByStatus(String status) {
+
+        Response response = new Response();
+
         try {
-            TicketStatus ticketStatus = TicketStatus.valueOf(status.toUpperCase());
-            List<Ticket> tickets = ticketRepository.findByStatus(ticketStatus);
-            return Response.builder()
-                    .statusCode(200)
-                    .message("Tickets by status fetched successfully")
-                    .tickets(tickets)
-                    .build();
+
+            TicketStatus ticketStatus =
+                    TicketStatus.valueOf(status.toUpperCase());
+
+            List<Ticket> tickets =
+                    ticketRepository.findByStatus(ticketStatus);
+
+            List<TicketDto> ticketDtos =
+                    tickets.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
+
+            response.setStatusCode(200);
+            response.setMessage(
+                    "Tickets retrieved successfully"
+            );
+            response.setTickets(ticketDtos);
+
         } catch (IllegalArgumentException e) {
-            return Response.builder()
-                    .statusCode(400)
-                    .message("Invalid ticket status: " + status)
-                    .build();
+
+            response.setStatusCode(400);
+            response.setMessage("Invalid ticket status");
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error occurred while fetching tickets by status: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while getting tickets: "
+                            + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
-    public Response updateTicket(TicketUpdateRequestDto request, Long id) {
+    public Response updateTicket(
+            TicketUpdateRequestDto request,
+            Long id) {
+
+        Response response = new Response();
+
         try {
-            Optional<Ticket> existingTicketOptional = ticketRepository.findById(id);
-            if (existingTicketOptional.isEmpty()) {
-                return Response.builder()
-                        .statusCode(404)
-                        .message("Ticket not found with id: " + id)
-                        .build();
+
+            Optional<Ticket> ticketOptional =
+                    ticketRepository.findById(id);
+
+            if (ticketOptional.isEmpty()) {
+
+                response.setStatusCode(404);
+                response.setMessage("Ticket not found");
+
+                return response;
             }
 
-            Ticket existingTicket = existingTicketOptional.get();
+            Ticket existingTicket =
+                    ticketOptional.get();
 
-            // 1. Update Basic Fields
             if (request.getSubject() != null) {
-                existingTicket.setSubject(request.getSubject());
+                existingTicket.setSubject(
+                        request.getSubject()
+                );
             }
+
             if (request.getDescription() != null) {
-                existingTicket.setDescription(request.getDescription());
+                existingTicket.setDescription(
+                        request.getDescription()
+                );
             }
+
             if (request.getPriority() != null) {
-                existingTicket.setPriority(request.getPriority());
+                existingTicket.setPriority(
+                        request.getPriority()
+                );
             }
 
-            // 2. Update Customer Relationship (if provided)
-            if (request.getCustomerId() != null) {
-                Optional<User> customerOpt = userRepository.findById(request.getCustomerId());
-                if (customerOpt.isEmpty()) {
-                    return Response.builder()
-                            .statusCode(400)
-                            .message("Customer not found with id: " + request.getCustomerId())
-                            .build();
-                }
-                existingTicket.setCustomer(customerOpt.get());
-            }
+            if (request.getStatus() != null &&
+                    !request.getStatus().equals(
+                            existingTicket.getStatus()
+                    )) {
 
-            // 3. Update Assigned Agent Relationship (if provided)
-            if (request.getAssignedAgentId() != null) {
-                Optional<User> agentOpt = userRepository.findById(request.getAssignedAgentId());
-                if (agentOpt.isEmpty()) {
-                    return Response.builder()
-                            .statusCode(400)
-                            .message("Agent not found with id: " + request.getAssignedAgentId())
-                            .build();
-                }
-                existingTicket.setAssignedAgent(agentOpt.get());
-            }
-
-            // 4. Update Category Relationship (if provided)
-            if (request.getCategoryId() != null) {
-                Optional<Category> categoryOpt = categoryRepository.findById(request.getCategoryId());
-                if (categoryOpt.isEmpty()) {
-                    return Response.builder()
-                            .statusCode(400)
-                            .message("Category not found with id: " + request.getCategoryId())
-                            .build();
-                }
-                existingTicket.setCategory(categoryOpt.get());
-            }
-
-            // 5. Status Update & Strict Validation for TicketStatusHistory
-            if (request.getStatus() != null && !request.getStatus().equals(existingTicket.getStatus())) {
-
-                // Strict validation: changedByUserId must be present when changing status
                 if (request.getChangedByUserId() == null) {
-                    return Response.builder()
-                            .statusCode(400)
-                            .message("changedByUserId is required when changing ticket status")
-                            .build();
+
+                    response.setStatusCode(400);
+                    response.setMessage(
+                            "changedByUserId is required when changing ticket status"
+                    );
+
+                    return response;
                 }
 
-                Optional<User> changedByUserOpt = userRepository.findById(request.getChangedByUserId());
-                if (changedByUserOpt.isEmpty()) {
-                    return Response.builder()
-                            .statusCode(400)
-                            .message("User who changed the status was not found with id: " + request.getChangedByUserId())
-                            .build();
+                Optional<User> changedByUserOptional =
+                        userRepository.findById(
+                                request.getChangedByUserId()
+                        );
+
+                if (changedByUserOptional.isEmpty()) {
+
+                    response.setStatusCode(400);
+                    response.setMessage(
+                            "User who changed the status was not found"
+                    );
+
+                    return response;
                 }
 
-                TicketStatus oldStatus = existingTicket.getStatus();
-                TicketStatus newStatus = request.getStatus();
+                TicketStatus oldStatus =
+                        existingTicket.getStatus();
+
+                TicketStatus newStatus =
+                        request.getStatus();
 
                 existingTicket.setStatus(newStatus);
 
-                TicketStatusHistory history = TicketStatusHistory.builder()
-                        .ticket(existingTicket)
-                        .oldStatus(oldStatus)
-                        .newStatus(newStatus)
-                        .changedBy(changedByUserOpt.get())
-                        .build();
+                TicketStatusHistory history =
+                        TicketStatusHistory.builder()
+                                .ticket(existingTicket)
+                                .oldStatus(oldStatus)
+                                .newStatus(newStatus)
+                                .changedBy(
+                                        changedByUserOptional.get()
+                                )
+                                .build();
 
                 ticketStatusHistoryRepository.save(history);
             }
 
-            Ticket savedTicket = ticketRepository.save(existingTicket);
-            return Response.builder()
-                    .statusCode(200)
-                    .message("Ticket updated successfully")
-                    .ticket(savedTicket)
-                    .build();
+            if (request.getCustomerId() != null) {
+
+                Optional<User> customerOptional =
+                        userRepository.findById(
+                                request.getCustomerId()
+                        );
+
+                if (customerOptional.isEmpty()) {
+
+                    response.setStatusCode(400);
+                    response.setMessage("Customer not found");
+
+                    return response;
+                }
+
+                existingTicket.setCustomer(
+                        customerOptional.get()
+                );
+            }
+
+            if (request.getAssignedAgentId() != null) {
+
+                Optional<User> agentOptional =
+                        userRepository.findById(
+                                request.getAssignedAgentId()
+                        );
+
+                if (agentOptional.isEmpty()) {
+
+                    response.setStatusCode(400);
+                    response.setMessage(
+                            "Assigned agent not found"
+                    );
+
+                    return response;
+                }
+
+                existingTicket.setAssignedAgent(
+                        agentOptional.get()
+                );
+            }
+
+            if (request.getCategoryId() != null) {
+
+                Optional<Category> categoryOptional =
+                        categoryRepository.findById(
+                                request.getCategoryId()
+                        );
+
+                if (categoryOptional.isEmpty()) {
+
+                    response.setStatusCode(400);
+                    response.setMessage("Category not found");
+
+                    return response;
+                }
+
+                existingTicket.setCategory(
+                        categoryOptional.get()
+                );
+            }
+
+            Ticket updatedTicket =
+                    ticketRepository.save(existingTicket);
+
+            response.setStatusCode(200);
+            response.setMessage(
+                    "Ticket updated successfully"
+            );
+            response.setTicket(
+                    convertToDto(updatedTicket)
+            );
 
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error occurred while updating ticket: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while updating ticket: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response deleteTicket(Long id) {
+
+        Response response = new Response();
+
         try {
-            if (ticketRepository.existsById(id)) {
-                ticketRepository.deleteById(id);
-                return Response.builder()
-                        .statusCode(200)
-                        .message("Ticket deleted successfully")
-                        .build();
+
+            if (!ticketRepository.existsById(id)) {
+
+                response.setStatusCode(404);
+                response.setMessage("Ticket not found");
+
+                return response;
             }
-            return Response.builder()
-                    .statusCode(404)
-                    .message("Ticket not found with id: " + id)
-                    .build();
+
+            ticketRepository.deleteById(id);
+
+            response.setStatusCode(200);
+            response.setMessage(
+                    "Ticket deleted successfully"
+            );
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error occurred while deleting ticket: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while deleting ticket: " + e.getMessage()
+            );
         }
+
+        return response;
+    }
+
+    private TicketDto convertToDto(Ticket ticket) {
+
+        return new TicketDto(
+                ticket.getId(),
+                ticket.getSubject(),
+                ticket.getDescription(),
+                ticket.getStatus(),
+                ticket.getPriority(),
+                ticket.getCustomer() != null
+                        ? ticket.getCustomer().getId()
+                        : null,
+                ticket.getAssignedAgent() != null
+                        ? ticket.getAssignedAgent().getId()
+                        : null,
+                ticket.getCategory() != null
+                        ? ticket.getCategory().getId()
+                        : null,
+                ticket.getCreatedAt(),
+                ticket.getUpdatedAt()
+        );
     }
 }

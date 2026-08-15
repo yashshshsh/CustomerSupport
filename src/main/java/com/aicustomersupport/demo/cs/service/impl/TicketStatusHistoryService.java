@@ -1,6 +1,7 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.dto.TicketStatusHistoryDto;
 import com.aicustomersupport.demo.cs.model.TicketStatusHistory;
 import com.aicustomersupport.demo.cs.repository.TicketStatusHistoryRepository;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketStatusHistoryService;
@@ -9,193 +10,148 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-public class TicketStatusHistoryService
-        implements ITicketStatusHistoryService {
+public class TicketStatusHistoryService implements ITicketStatusHistoryService {
 
     @Autowired
-    private TicketStatusHistoryRepository ticketStatusHistoryRepository;
+    private TicketStatusHistoryRepository historyRepository;
 
     @Override
-    public Response createStatusHistory(
-            TicketStatusHistory statusHistory) {
-
-        Response response = new Response();
-
+    public Response createStatusHistory(TicketStatusHistory statusHistory) {
         try {
-
-            TicketStatusHistory savedStatusHistory =
-                    ticketStatusHistoryRepository.save(statusHistory);
-
-            response.setStatusCode(200);
-            response.setMessage("Status history created successfully");
-            response.setTicketStatusHistory(savedStatusHistory);
-
+            TicketStatusHistory savedHistory = historyRepository.save(statusHistory);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Ticket status history created successfully")
+                    .ticketStatusHistory(convertToDto(savedHistory))
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while creating status history: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error creating status history: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getStatusHistory(Long id) {
-
-        Response response = new Response();
-
         try {
-
-            Optional<TicketStatusHistory> statusHistoryOptional =
-                    ticketStatusHistoryRepository.findById(id);
-
-            if (statusHistoryOptional.isEmpty()) {
-
-                response.setStatusCode(400);
-                response.setMessage("Status history not found");
-
-                return response;
+            Optional<TicketStatusHistory> historyOpt = historyRepository.findById(id);
+            if (historyOpt.isPresent()) {
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Status history retrieved successfully")
+                        .ticketStatusHistory(convertToDto(historyOpt.get()))
+                        .build();
             }
-
-            response.setStatusCode(200);
-            response.setTicketStatusHistory(
-                    statusHistoryOptional.get()
-            );
-
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Status history not found with id: " + id)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting status history: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving status history: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getAllStatusHistory() {
-
-        Response response = new Response();
-
         try {
+            List<TicketStatusHistory> histories = historyRepository.findAll();
+            List<TicketStatusHistoryDto> historyDtos = histories.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
 
-            List<TicketStatusHistory> statusHistories =
-                    ticketStatusHistoryRepository.findAll();
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Status histories retrieved successfully"
-            );
-            response.setTicketStatusHistories(statusHistories);
-
+            return Response.builder()
+                    .statusCode(200)
+                    .message("All status histories retrieved successfully")
+                    .ticketStatusHistories(historyDtos)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting status histories: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving status histories: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getStatusHistoryByTicket(Long ticketId) {
-
-        Response response = new Response();
-
         try {
+            List<TicketStatusHistory> histories = historyRepository.findByTicketId(ticketId);
+            List<TicketStatusHistoryDto> historyDtos = histories.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
 
-            List<TicketStatusHistory> statusHistories =
-                    ticketStatusHistoryRepository
-                            .findByTicketId(ticketId);
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Ticket status history retrieved successfully"
-            );
-            response.setTicketStatusHistories(statusHistories);
-
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Ticket status history retrieved successfully")
+                    .ticketStatusHistories(historyDtos)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting ticket status history: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving ticket status history: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getStatusHistoryByUser(Long userId) {
-
-        Response response = new Response();
-
         try {
+            List<TicketStatusHistory> histories = historyRepository.findByChangedById(userId);
+            List<TicketStatusHistoryDto> historyDtos = histories.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
 
-            List<TicketStatusHistory> statusHistories =
-                    ticketStatusHistoryRepository
-                            .findByChangedById(userId);
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "User status history retrieved successfully"
-            );
-            response.setTicketStatusHistories(statusHistories);
-
+            return Response.builder()
+                    .statusCode(200)
+                    .message("User status history retrieved successfully")
+                    .ticketStatusHistories(historyDtos)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting user status history: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error retrieving user status history: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response deleteStatusHistory(Long id) {
-
-        Response response = new Response();
-
         try {
-
-            if (!ticketStatusHistoryRepository.existsById(id)) {
-
-                response.setStatusCode(400);
-                response.setMessage("Status history not found");
-
-                return response;
+            if (historyRepository.existsById(id)) {
+                historyRepository.deleteById(id);
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Status history deleted successfully")
+                        .build();
             }
-
-            ticketStatusHistoryRepository.deleteById(id);
-
-            response.setStatusCode(200);
-            response.setMessage(
-                    "Status history deleted successfully"
-            );
-
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Status history not found with id: " + id)
+                    .build();
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while deleting status history: "
-                            + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error deleting status history: " + e.getMessage())
+                    .build();
         }
+    }
 
-        return response;
+    // Helper method to convert Entity -> DTO safely
+    private TicketStatusHistoryDto convertToDto(TicketStatusHistory history) {
+        return TicketStatusHistoryDto.builder()
+                .id(history.getId())
+                .oldStatus(history.getOldStatus())
+                .newStatus(history.getNewStatus())
+                .changedAt(history.getChangedAt())
+                .ticketId(history.getTicket() != null ? history.getTicket().getId() : null)
+                .changedByUserId(history.getChangedBy() != null ? history.getChangedBy().getId() : null)
+                .build();
     }
 }

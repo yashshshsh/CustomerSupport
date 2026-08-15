@@ -1,5 +1,6 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
+import com.aicustomersupport.demo.cs.dto.CategoryDto;
 import com.aicustomersupport.demo.cs.dto.Response;
 import com.aicustomersupport.demo.cs.model.Category;
 import com.aicustomersupport.demo.cs.repository.CategoryRepository;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryService implements ICategoryService {
@@ -18,166 +20,137 @@ public class CategoryService implements ICategoryService {
 
     @Override
     public Response createCategory(Category category) {
-
-        Response response = new Response();
-
         try {
-
             if (categoryRepository.existsByName(category.getName())) {
-
-                response.setStatusCode(400);
-                response.setMessage("Category already exists");
-
-                return response;
+                return Response.builder()
+                        .statusCode(400)
+                        .message("Category name already exists")
+                        .build();
             }
 
             Category savedCategory = categoryRepository.save(category);
-
-            response.setStatusCode(200);
-            response.setMessage("Category created successfully");
-            response.setCategory(savedCategory);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Category created successfully")
+                    .category(convertToDto(savedCategory))
+                    .build();
 
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while creating category: " + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error while creating category: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getCategory(Long id) {
-
-        Response response = new Response();
-
         try {
-
-            Optional<Category> categoryOptional =
-                    categoryRepository.findById(id);
-
-            if (categoryOptional.isEmpty()) {
-
-                response.setStatusCode(400);
-                response.setMessage("Category not found");
-
-                return response;
+            Optional<Category> categoryOpt = categoryRepository.findById(id);
+            if (categoryOpt.isPresent()) {
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Category retrieved successfully")
+                        .category(convertToDto(categoryOpt.get()))
+                        .build();
             }
 
-            response.setStatusCode(200);
-            response.setCategory(categoryOptional.get());
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Category not found with id: " + id)
+                    .build();
 
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting category: " + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error while retrieving category: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response getAllCategories() {
-
-        Response response = new Response();
-
         try {
-
             List<Category> categories = categoryRepository.findAll();
+            List<CategoryDto> categoryDtos = categories.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
 
-            response.setStatusCode(200);
-            response.setMessage("Categories retrieved successfully");
-            response.setCategories(categories);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Categories retrieved successfully")
+                    .categories(categoryDtos)
+                    .build();
 
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while getting categories: " + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error while getting categories: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response updateCategory(Category category, Long id) {
-
-        Response response = new Response();
-
         try {
+            Optional<Category> existingCategoryOpt = categoryRepository.findById(id);
+            if (existingCategoryOpt.isPresent()) {
+                Category existingCategory = existingCategoryOpt.get();
 
-            Optional<Category> categoryOptional =
-                    categoryRepository.findById(id);
+                if (category.getName() != null) existingCategory.setName(category.getName());
+                if (category.getDescription() != null) existingCategory.setDescription(category.getDescription());
 
-            if (categoryOptional.isEmpty()) {
+                Category updatedCategory = categoryRepository.save(existingCategory);
 
-                response.setStatusCode(400);
-                response.setMessage("Category not found");
-
-                return response;
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Category updated successfully")
+                        .category(convertToDto(updatedCategory))
+                        .build();
             }
 
-            Category existingCategory = categoryOptional.get();
-
-            if (category.getName() != null) {
-                existingCategory.setName(category.getName());
-            }
-
-            if (category.getDescription() != null) {
-                existingCategory.setDescription(category.getDescription());
-            }
-
-            Category updatedCategory =
-                    categoryRepository.save(existingCategory);
-
-            response.setStatusCode(200);
-            response.setMessage("Category updated successfully");
-            response.setCategory(updatedCategory);
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Category not found with id: " + id)
+                    .build();
 
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while updating category: " + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error while updating category: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
 
     @Override
     public Response deleteCategory(Long id) {
-
-        Response response = new Response();
-
         try {
-
-            if (!categoryRepository.existsById(id)) {
-
-                response.setStatusCode(400);
-                response.setMessage("Category not found");
-
-                return response;
+            if (categoryRepository.existsById(id)) {
+                categoryRepository.deleteById(id);
+                return Response.builder()
+                        .statusCode(200)
+                        .message("Category deleted successfully")
+                        .build();
             }
 
-            categoryRepository.deleteById(id);
-
-            response.setStatusCode(200);
-            response.setMessage("Category deleted successfully");
+            return Response.builder()
+                    .statusCode(404)
+                    .message("Category not found")
+                    .build();
 
         } catch (Exception e) {
-
-            response.setStatusCode(500);
-            response.setMessage(
-                    "Error while deleting category: " + e.getMessage()
-            );
+            return Response.builder()
+                    .statusCode(500)
+                    .message("Error while deleting category: " + e.getMessage())
+                    .build();
         }
+    }
 
-        return response;
+    private CategoryDto convertToDto(Category category) {
+        return CategoryDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .build();
     }
 }

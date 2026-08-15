@@ -1,14 +1,18 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
+import com.aicustomersupport.demo.cs.dto.KnowledgeArticleDto;
 import com.aicustomersupport.demo.cs.dto.Response;
 import com.aicustomersupport.demo.cs.model.KnowledgeArticle;
 import com.aicustomersupport.demo.cs.repository.KnowledgeArticleRepository;
 import com.aicustomersupport.demo.cs.service.interfac.IKnowledgeArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class KnowledgeArticleService implements IKnowledgeArticleService {
@@ -17,14 +21,14 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
     private KnowledgeArticleRepository knowledgeArticleRepository;
 
     @Override
-    public Response createArticle(KnowledgeArticle article) {
+    public Response createArticle(KnowledgeArticleDto articleDto) {
 
         Response response = new Response();
 
         try {
 
-            if (article.getTitle() == null ||
-                    article.getTitle().isBlank()) {
+            if (articleDto.getTitle() == null ||
+                    articleDto.getTitle().isBlank()) {
 
                 response.setStatusCode(400);
                 response.setMessage("Article title is required");
@@ -32,8 +36,8 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
                 return response;
             }
 
-            if (article.getContent() == null ||
-                    article.getContent().isBlank()) {
+            if (articleDto.getContent() == null ||
+                    articleDto.getContent().isBlank()) {
 
                 response.setStatusCode(400);
                 response.setMessage("Article content is required");
@@ -41,12 +45,23 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
                 return response;
             }
 
+            KnowledgeArticle article =
+                    new KnowledgeArticle();
+
+            article.setTitle(articleDto.getTitle());
+            article.setContent(articleDto.getContent());
+            article.setActive(articleDto.isActive());
+
             KnowledgeArticle savedArticle =
                     knowledgeArticleRepository.save(article);
 
             response.setStatusCode(200);
-            response.setMessage("Article created successfully");
-            response.setKnowledgeArticle(savedArticle);
+            response.setMessage(
+                    "Article created successfully"
+            );
+            response.setKnowledgeArticle(
+                    convertToDto(savedArticle)
+            );
 
         } catch (Exception e) {
 
@@ -72,15 +87,18 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             if (articleOptional.isEmpty()) {
 
-                response.setStatusCode(400);
+                response.setStatusCode(404);
                 response.setMessage("Article not found");
 
                 return response;
             }
 
             response.setStatusCode(200);
+            response.setMessage(
+                    "Article retrieved successfully"
+            );
             response.setKnowledgeArticle(
-                    articleOptional.get()
+                    convertToDto(articleOptional.get())
             );
 
         } catch (Exception e) {
@@ -96,20 +114,26 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
     }
 
     @Override
-    public Response getAllArticles() {
+    public Response getAllArticles(Pageable pageable) {
 
         Response response = new Response();
 
         try {
 
-            List<KnowledgeArticle> articles =
-                    knowledgeArticleRepository.findAll();
+            Page<KnowledgeArticle> articlePage =
+                    knowledgeArticleRepository.findAll(pageable);
+
+            List<KnowledgeArticleDto> articleDtos =
+                    articlePage.getContent()
+                            .stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
 
             response.setStatusCode(200);
             response.setMessage(
                     "Articles retrieved successfully"
             );
-            response.setKnowledgeArticles(articles);
+            response.setKnowledgeArticles(articleDtos);
 
         } catch (Exception e) {
 
@@ -124,21 +148,32 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
     }
 
     @Override
-    public Response getArticlesByCategory(Long categoryId) {
+    public Response getArticlesByCategory(
+            Long categoryId,
+            Pageable pageable) {
 
         Response response = new Response();
 
         try {
 
-            List<KnowledgeArticle> articles =
+            Page<KnowledgeArticle> articlePage =
                     knowledgeArticleRepository
-                            .findByCategoryId(categoryId);
+                            .findByCategoryId(
+                                    categoryId,
+                                    pageable
+                            );
+
+            List<KnowledgeArticleDto> articleDtos =
+                    articlePage.getContent()
+                            .stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
 
             response.setStatusCode(200);
             response.setMessage(
                     "Category articles retrieved successfully"
             );
-            response.setKnowledgeArticles(articles);
+            response.setKnowledgeArticles(articleDtos);
 
         } catch (Exception e) {
 
@@ -153,20 +188,30 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
     }
 
     @Override
-    public Response getActiveArticles() {
+    public Response getActiveArticles(Pageable pageable) {
 
         Response response = new Response();
 
         try {
 
-            List<KnowledgeArticle> articles =
-                    knowledgeArticleRepository.findByActive(true);
+            Page<KnowledgeArticle> articlePage =
+                    knowledgeArticleRepository
+                            .findByActive(
+                                    true,
+                                    pageable
+                            );
+
+            List<KnowledgeArticleDto> articleDtos =
+                    articlePage.getContent()
+                            .stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
 
             response.setStatusCode(200);
             response.setMessage(
                     "Active articles retrieved successfully"
             );
-            response.setKnowledgeArticles(articles);
+            response.setKnowledgeArticles(articleDtos);
 
         } catch (Exception e) {
 
@@ -182,7 +227,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
     @Override
     public Response updateArticle(
-            KnowledgeArticle article,
+            KnowledgeArticleDto articleDto,
             Long id) {
 
         Response response = new Response();
@@ -194,7 +239,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             if (articleOptional.isEmpty()) {
 
-                response.setStatusCode(400);
+                response.setStatusCode(404);
                 response.setMessage("Article not found");
 
                 return response;
@@ -203,25 +248,25 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
             KnowledgeArticle existingArticle =
                     articleOptional.get();
 
-            if (article.getTitle() != null) {
+            if (articleDto.getTitle() != null &&
+                    !articleDto.getTitle().isBlank()) {
+
                 existingArticle.setTitle(
-                        article.getTitle()
+                        articleDto.getTitle()
                 );
             }
 
-            if (article.getContent() != null) {
+            if (articleDto.getContent() != null &&
+                    !articleDto.getContent().isBlank()) {
+
                 existingArticle.setContent(
-                        article.getContent()
+                        articleDto.getContent()
                 );
             }
 
-            if (article.getCategory() != null) {
-                existingArticle.setCategory(
-                        article.getCategory()
-                );
-            }
-
-            existingArticle.setActive(article.isActive());
+            existingArticle.setActive(
+                    articleDto.isActive()
+            );
 
             KnowledgeArticle updatedArticle =
                     knowledgeArticleRepository.save(
@@ -232,7 +277,9 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
             response.setMessage(
                     "Article updated successfully"
             );
-            response.setKnowledgeArticle(updatedArticle);
+            response.setKnowledgeArticle(
+                    convertToDto(updatedArticle)
+            );
 
         } catch (Exception e) {
 
@@ -255,7 +302,7 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
 
             if (!knowledgeArticleRepository.existsById(id)) {
 
-                response.setStatusCode(400);
+                response.setStatusCode(404);
                 response.setMessage("Article not found");
 
                 return response;
@@ -278,5 +325,21 @@ public class KnowledgeArticleService implements IKnowledgeArticleService {
         }
 
         return response;
+    }
+
+    private KnowledgeArticleDto convertToDto(
+            KnowledgeArticle article) {
+
+        return new KnowledgeArticleDto(
+                article.getId(),
+                article.getTitle(),
+                article.getContent(),
+                article.getCategory() != null
+                        ? article.getCategory().getId()
+                        : null,
+                article.isActive(),
+                article.getCreatedAt(),
+                article.getUpdatedAt()
+        );
     }
 }

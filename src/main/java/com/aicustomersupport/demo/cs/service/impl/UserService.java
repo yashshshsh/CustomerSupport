@@ -2,6 +2,7 @@ package com.aicustomersupport.demo.cs.service.impl;
 
 import com.aicustomersupport.demo.cs.dto.LoginRequestDto;
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.dto.UserDto;
 import com.aicustomersupport.demo.cs.model.User;
 import com.aicustomersupport.demo.cs.repository.UserRepository;
 import com.aicustomersupport.demo.cs.service.interfac.IUserService;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements IUserService {
@@ -19,140 +21,247 @@ public class UserService implements IUserService {
 
     @Override
     public Response registerUser(User user) {
+
         Response response = new Response();
+
         try {
+
             if (userRepository.existsByEmail(user.getEmail())) {
-                return Response.builder()
-                        .statusCode(400)
-                        .message("Email is already in use")
-                        .build();
+                response.setStatusCode(400);
+                response.setMessage("Email already exists");
+                return response;
             }
+
             User savedUser = userRepository.save(user);
-            return Response.builder()
-                    .statusCode(200)
-                    .message("User registered successfully")
-                    .user(savedUser)
-                    .build();
+
+            response.setStatusCode(200);
+            response.setMessage("User registered successfully");
+            response.setUser(convertToDto(savedUser));
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error registering user: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while registering user: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response loginUser(LoginRequestDto loginRequest) {
+
+        Response response = new Response();
+
         try {
-            Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
-            if (userOptional.isPresent() && userOptional.get().getPassword().equals(loginRequest.getPassword())) {
-                return Response.builder()
-                        .statusCode(200)
-                        .message("Login successful")
-                        .user(userOptional.get())
-                        .build();
+
+            Optional<User> userOptional =
+                    userRepository.findByEmail(
+                            loginRequest.getEmail()
+                    );
+
+            if (userOptional.isEmpty()) {
+                response.setStatusCode(401);
+                response.setMessage("Invalid email or password");
+                return response;
             }
-            return Response.builder()
-                    .statusCode(400)
-                    .message("Invalid email or password")
-                    .build();
+
+            User user = userOptional.get();
+
+            if (!user.getPassword().equals(
+                    loginRequest.getPassword())) {
+
+                response.setStatusCode(401);
+                response.setMessage("Invalid email or password");
+                return response;
+            }
+
+            response.setStatusCode(200);
+            response.setMessage("Login successful");
+            response.setUser(convertToDto(user));
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error during login: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while logging in: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response getUser(Long id) {
+
+        Response response = new Response();
+
         try {
-            Optional<User> userOptional = userRepository.findById(id);
-            if (userOptional.isPresent()) {
-                return Response.builder()
-                        .statusCode(200)
-                        .message("User retrieved successfully")
-                        .user(userOptional.get())
-                        .build();
+
+            Optional<User> userOptional =
+                    userRepository.findById(id);
+
+            if (userOptional.isEmpty()) {
+                response.setStatusCode(404);
+                response.setMessage("User not found");
+                return response;
             }
-            return Response.builder()
-                    .statusCode(404)
-                    .message("User not found with id: " + id)
-                    .build();
+
+            response.setStatusCode(200);
+            response.setMessage("User retrieved successfully");
+            response.setUser(
+                    convertToDto(userOptional.get())
+            );
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error retrieving user: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while getting user: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response getAllUsers() {
+
+        Response response = new Response();
+
         try {
-            List<User> users = userRepository.findAll();
-            return Response.builder()
-                    .statusCode(200)
-                    .message("Users retrieved successfully")
-                    .users(users)
-                    .build();
+
+            List<User> users =
+                    userRepository.findAll();
+
+            List<UserDto> userDtos =
+                    users.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
+
+            response.setStatusCode(200);
+            response.setMessage(
+                    "Users retrieved successfully"
+            );
+            response.setUsers(userDtos);
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error retrieving users: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while getting users: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
-    public Response updateUser(User updatedUser, Long id) {
+    public Response updateUser(User user, Long id) {
+
+        Response response = new Response();
+
         try {
-            Optional<User> existingUserOptional = userRepository.findById(id);
-            if (existingUserOptional.isPresent()) {
-                User existingUser = existingUserOptional.get();
 
-                if (updatedUser.getName() != null) existingUser.setName(updatedUser.getName());
-                if (updatedUser.getEmail() != null) existingUser.setEmail(updatedUser.getEmail());
-                if (updatedUser.getRole() != null) existingUser.setRole(updatedUser.getRole());
+            Optional<User> userOptional =
+                    userRepository.findById(id);
 
-                User savedUser = userRepository.save(existingUser);
-                return Response.builder()
-                        .statusCode(200)
-                        .message("User updated successfully")
-                        .user(savedUser)
-                        .build();
+            if (userOptional.isEmpty()) {
+                response.setStatusCode(404);
+                response.setMessage("User not found");
+                return response;
             }
-            return Response.builder()
-                    .statusCode(404)
-                    .message("User not found with id: " + id)
-                    .build();
+
+            User existingUser =
+                    userOptional.get();
+
+            if (user.getName() != null) {
+                existingUser.setName(
+                        user.getName()
+                );
+            }
+
+            if (user.getEmail() != null) {
+                existingUser.setEmail(
+                        user.getEmail()
+                );
+            }
+
+            if (user.getPassword() != null) {
+                existingUser.setPassword(
+                        user.getPassword()
+                );
+            }
+
+            if (user.getRole() != null) {
+                existingUser.setRole(
+                        user.getRole()
+                );
+            }
+
+            User updatedUser =
+                    userRepository.save(existingUser);
+
+            response.setStatusCode(200);
+            response.setMessage(
+                    "User updated successfully"
+            );
+            response.setUser(
+                    convertToDto(updatedUser)
+            );
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error updating user: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while updating user: " + e.getMessage()
+            );
         }
+
+        return response;
     }
 
     @Override
     public Response deleteUser(Long id) {
+
+        Response response = new Response();
+
         try {
-            if (userRepository.existsById(id)) {
-                userRepository.deleteById(id);
-                return Response.builder()
-                        .statusCode(200)
-                        .message("User deleted successfully")
-                        .build();
+
+            if (!userRepository.existsById(id)) {
+                response.setStatusCode(404);
+                response.setMessage("User not found");
+                return response;
             }
-            return Response.builder()
-                    .statusCode(404)
-                    .message("User not found with id: " + id)
-                    .build();
+
+            userRepository.deleteById(id);
+
+            response.setStatusCode(200);
+            response.setMessage(
+                    "User deleted successfully"
+            );
+
         } catch (Exception e) {
-            return Response.builder()
-                    .statusCode(500)
-                    .message("Error deleting user: " + e.getMessage())
-                    .build();
+
+            response.setStatusCode(500);
+            response.setMessage(
+                    "Error while deleting user: " + e.getMessage()
+            );
         }
+
+        return response;
+    }
+
+    private UserDto convertToDto(User user) {
+
+        return new UserDto(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
     }
 }
