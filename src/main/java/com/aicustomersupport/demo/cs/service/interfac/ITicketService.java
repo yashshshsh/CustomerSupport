@@ -1,6 +1,7 @@
 package com.aicustomersupport.demo.cs.service.interfac;
 
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.dto.TicketUpdateRequestDto;
 import com.aicustomersupport.demo.cs.model.Ticket;
 
 public interface ITicketService {
@@ -17,7 +18,8 @@ public interface ITicketService {
 
     Response getTicketsByStatus(String status);
 
-    Response updateTicket(Ticket ticket, Long id);
+    Response updateTicket(TicketUpdateRequestDto ticketUpdateRequest,
+                          Long id);
 
     Response deleteTicket(Long id);
 }

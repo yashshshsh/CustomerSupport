@@ -1,6 +1,7 @@
 package com.aicustomersupport.demo.cs.controller;
 
 import com.aicustomersupport.demo.cs.dto.Response;
+import com.aicustomersupport.demo.cs.dto.TicketUpdateRequestDto;
 import com.aicustomersupport.demo.cs.model.Ticket;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,16 +16,19 @@ public class TicketController {
 
     @PostMapping
     public Response createTicket(@RequestBody Ticket ticket) {
+
         return ticketService.createTicket(ticket);
     }
 
     @GetMapping("/{id}")
     public Response getTicket(@PathVariable Long id) {
+
         return ticketService.getTicket(id);
     }
 
     @GetMapping
     public Response getAllTickets() {
+
         return ticketService.getAllTickets();
     }
 
@@ -51,14 +55,15 @@ public class TicketController {
 
     @PutMapping("/{id}")
     public Response updateTicket(
-            @RequestBody Ticket ticket,
+            @RequestBody TicketUpdateRequestDto request,
             @PathVariable Long id) {
 
-        return ticketService.updateTicket(ticket, id);
+        return ticketService.updateTicket(request, id);
     }
 
     @DeleteMapping("/{id}")
     public Response deleteTicket(@PathVariable Long id) {
+
         return ticketService.deleteTicket(id);
     }
 }
