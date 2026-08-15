@@ -4,6 +4,7 @@ import com.aicustomersupport.demo.cs.dto.CategoryDto;
 import com.aicustomersupport.demo.cs.dto.Response;
 import com.aicustomersupport.demo.cs.model.Category;
 import com.aicustomersupport.demo.cs.repository.CategoryRepository;
+import com.aicustomersupport.demo.cs.repository.TicketRepository;
 import com.aicustomersupport.demo.cs.service.interfac.ICategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,11 +19,16 @@ public class CategoryService implements ICategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Autowired
+    private TicketRepository ticketRepository;
+
     @Override
     public Response createCategory(Category category) {
         try {
-            if (category == null || category.getName() == null ||
+            if (category == null ||
+                    category.getName() == null ||
                     category.getName().isBlank()) {
+
                 return Response.builder()
                         .statusCode(400)
                         .message("Category name is required")
@@ -219,15 +225,33 @@ public class CategoryService implements ICategoryService {
 
     @Override
     public Response deleteCategory(Long id) {
+
         try {
-            if (!categoryRepository.existsById(id)) {
+            Optional<Category> categoryOpt =
+                    categoryRepository.findById(id);
+
+            if (categoryOpt.isEmpty()) {
                 return Response.builder()
                         .statusCode(404)
-                        .message("Category not found")
+                        .message(
+                                "Category not found with id: " + id
+                        )
                         .build();
             }
 
-            categoryRepository.deleteById(id);
+            List<?> ticketsUsingCategory =
+                    ticketRepository.findByCategoryId(id);
+
+            if (!ticketsUsingCategory.isEmpty()) {
+                return Response.builder()
+                        .statusCode(409)
+                        .message(
+                                "Category cannot be deleted because it is referenced by existing tickets"
+                        )
+                        .build();
+            }
+
+            categoryRepository.delete(categoryOpt.get());
 
             return Response.builder()
                     .statusCode(200)
@@ -236,9 +260,10 @@ public class CategoryService implements ICategoryService {
 
         } catch (Exception e) {
             return Response.builder()
-                    .statusCode(409)
+                    .statusCode(500)
                     .message(
-                            "Category cannot be deleted because it is referenced by existing records"
+                            "Error while deleting category: "
+                                    + e.getMessage()
                     )
                     .build();
         }
