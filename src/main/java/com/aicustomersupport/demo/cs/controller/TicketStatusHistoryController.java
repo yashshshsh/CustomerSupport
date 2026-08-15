@@ -1,7 +1,6 @@
 package com.aicustomersupport.demo.cs.controller;
 
 import com.aicustomersupport.demo.cs.dto.Response;
-import com.aicustomersupport.demo.cs.model.TicketStatusHistory;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketStatusHistoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -12,14 +11,6 @@ public class TicketStatusHistoryController {
 
     @Autowired
     private ITicketStatusHistoryService ticketStatusHistoryService;
-
-    @PostMapping
-    public Response createStatusHistory(
-            @RequestBody TicketStatusHistory statusHistory) {
-
-        return ticketStatusHistoryService
-                .createStatusHistory(statusHistory);
-    }
 
     @GetMapping("/{id}")
     public Response getStatusHistory(
@@ -50,13 +41,5 @@ public class TicketStatusHistoryController {
 
         return ticketStatusHistoryService
                 .getStatusHistoryByUser(userId);
-    }
-
-    @DeleteMapping("/{id}")
-    public Response deleteStatusHistory(
-            @PathVariable Long id) {
-
-        return ticketStatusHistoryService
-                .deleteStatusHistory(id);
     }
 }
