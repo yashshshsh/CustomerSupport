@@ -2,15 +2,25 @@ package com.aicustomersupport.demo.cs.service.impl;
 
 import com.aicustomersupport.demo.cs.dto.AiDecisionDto;
 import com.aicustomersupport.demo.cs.dto.AiTicketAnalysisDto;
+import com.aicustomersupport.demo.cs.dto.ArticleRecommendationDto;
 import com.aicustomersupport.demo.cs.service.interfac.IAiDecisionService;
 import com.aicustomersupport.demo.cs.service.interfac.IAiTicketAnalysisService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class AiDecisionService
         implements IAiDecisionService {
+
+    // ============================================================
+    // ARTICLE MATCH THRESHOLD
+    // ============================================================
+
+    private static final double STRONG_ARTICLE_SCORE = 0.70;
+
 
     @Autowired
     private IAiTicketAnalysisService aiTicketAnalysisService;
@@ -31,6 +41,10 @@ public class AiDecisionService
                 );
 
 
+        // ========================================================
+        // GET AI RESULTS
+        // ========================================================
+
         String category =
                 analysis.getCategory();
 
@@ -44,8 +58,36 @@ public class AiDecisionService
                 analysis.getPriorityConfidence();
 
 
+        List<ArticleRecommendationDto> recommendations =
+                analysis.getRecommendations();
+
+
         // ========================================================
-        // DECISION
+        // FIND BEST ARTICLE SCORE
+        // ========================================================
+
+        double bestArticleScore = 0.0;
+
+        if (recommendations != null
+                && !recommendations.isEmpty()) {
+
+            for (ArticleRecommendationDto recommendation
+                    : recommendations) {
+
+                if (recommendation != null) {
+
+                    bestArticleScore =
+                            Math.max(
+                                    bestArticleScore,
+                                    recommendation.getScore()
+                            );
+                }
+            }
+        }
+
+
+        // ========================================================
+        // DECISION VARIABLES
         // ========================================================
 
         String suggestedAction;
@@ -55,7 +97,7 @@ public class AiDecisionService
 
         // ========================================================
         // RULE 1
-        // HIGH PRIORITY
+        // HIGH PRIORITY ALWAYS REQUIRES AGENT REVIEW
         // ========================================================
 
         if ("HIGH".equalsIgnoreCase(priority)) {
@@ -65,33 +107,35 @@ public class AiDecisionService
 
             reason =
                     "High-priority ticket requires agent review.";
-
         }
 
 
         // ========================================================
         // RULE 2
-        // ARTICLE AVAILABLE
+        // LOW/MEDIUM + STRONG ARTICLE MATCH
         // ========================================================
 
         else if (
-                analysis.getRecommendations() != null
-                        && !analysis.getRecommendations().isEmpty()
+                bestArticleScore >= STRONG_ARTICLE_SCORE
         ) {
 
             suggestedAction =
                     "SUGGEST_ARTICLE";
 
             reason =
-                    "Relevant knowledge articles were found " +
-                            "for this ticket.";
-
+                    "A strong knowledge article match was found "
+                            + "(score: "
+                            + String.format(
+                            "%.4f",
+                            bestArticleScore
+                    )
+                            + ").";
         }
 
 
         // ========================================================
         // RULE 3
-        // NO STRONG ARTICLE MATCH
+        // LOW/MEDIUM + WEAK ARTICLE MATCH
         // ========================================================
 
         else {
@@ -129,7 +173,7 @@ public class AiDecisionService
                 .reason(reason)
 
                 .knowledgeArticleRecommendations(
-                        analysis.getRecommendations()
+                        recommendations
                 )
 
                 .build();
