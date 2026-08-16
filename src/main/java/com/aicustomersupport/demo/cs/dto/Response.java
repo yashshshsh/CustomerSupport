@@ -16,37 +16,98 @@ public class Response {
     private int statusCode;
     private String message;
 
-    // User responses
+    // ============================================================
+    // USER RESPONSES
+    // ============================================================
+
     private UserDto user;
     private List<UserDto> users;
 
-    // Ticket responses
+
+    // ============================================================
+    // TICKET RESPONSES
+    // ============================================================
+
     private TicketDto ticket;
     private List<TicketDto> tickets;
 
-    // Category responses (Updated to DTO)
+
+    // ============================================================
+    // CATEGORY RESPONSES
+    // ============================================================
+
     private CategoryDto category;
     private List<CategoryDto> categories;
 
-    // Ticket Status History responses
+
+    // ============================================================
+    // TICKET STATUS HISTORY RESPONSES
+    // ============================================================
+
     private TicketStatusHistoryDto ticketStatusHistory;
     private List<TicketStatusHistoryDto> ticketStatusHistories;
 
-    // Ticket Message responses
+
+    // ============================================================
+    // TICKET MESSAGE RESPONSES
+    // ============================================================
+
     private TicketMessageDto ticketMessage;
     private List<TicketMessageDto> ticketMessages;
 
-    // Ticket Feedback responses
+
+    // ============================================================
+    // TICKET FEEDBACK RESPONSES
+    // ============================================================
+
     private TicketFeedbackDto ticketFeedback;
     private List<TicketFeedbackDto> ticketFeedbacks;
 
-    // Ticket Attachment responses
+
+    // ============================================================
+    // TICKET ATTACHMENT RESPONSES
+    // ============================================================
+
     private TicketAttachmentDto ticketAttachment;
     private List<TicketAttachmentDto> ticketAttachments;
 
-    // Knowledge Article responses
+
+    // ============================================================
+    // KNOWLEDGE ARTICLE RESPONSES
+    // ============================================================
+
     private KnowledgeArticleDto knowledgeArticle;
     private List<KnowledgeArticleDto> knowledgeArticles;
+
+
+    // ============================================================
+    // AI CATEGORY PREDICTION
+    // ============================================================
+
+    private String aiCategory;
+
+    private Double aiCategoryConfidence;
+
+
+    // ============================================================
+    // AI PRIORITY PREDICTION
+    // ============================================================
+
+    private String aiPriority;
+
+    private Double aiPriorityConfidence;
+
+
+    // ============================================================
+    // AI KNOWLEDGE ARTICLE RECOMMENDATIONS
+    // ============================================================
+
+    private List<ArticleRecommendationDto> knowledgeArticleRecommendations;
+
+
+    // ============================================================
+    // CONSTRUCTOR
+    // ============================================================
 
     public Response(int statusCode, String message) {
         this.statusCode = statusCode;
