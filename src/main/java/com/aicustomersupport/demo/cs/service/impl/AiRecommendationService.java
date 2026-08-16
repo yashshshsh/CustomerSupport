@@ -33,7 +33,8 @@ public class AiRecommendationService implements IAiRecommendationService {
             return new ArrayList<>();
         }
 
-        List<Map<String, Object>> articleRequests = new ArrayList<>();
+        List<Map<String, Object>> articleRequests =
+                new ArrayList<>();
 
         for (KnowledgeArticle article : articles) {
 
@@ -53,10 +54,16 @@ public class AiRecommendationService implements IAiRecommendationService {
         );
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        headers.setContentType(
+                MediaType.APPLICATION_JSON
+        );
 
         HttpEntity<Map<String, Object>> requestEntity =
-                new HttpEntity<>(requestBody, headers);
+                new HttpEntity<>(
+                        requestBody,
+                        headers
+                );
 
         ResponseEntity<Map> response =
                 restTemplate.exchange(
@@ -72,25 +79,38 @@ public class AiRecommendationService implements IAiRecommendationService {
 
         List<Map<String, Object>> recommendations =
                 (List<Map<String, Object>>)
-                        response.getBody().get("recommendations");
+                        response.getBody()
+                                .get("recommendations");
 
-        List<ArticleRecommendationDto> result = new ArrayList<>();
+        List<ArticleRecommendationDto> result =
+                new ArrayList<>();
 
         if (recommendations == null) {
             return result;
         }
 
-        for (Map<String, Object> recommendation : recommendations) {
+        for (Map<String, Object> recommendation
+                : recommendations) {
 
             Number articleId =
-                    (Number) recommendation.get("articleId");
+                    (Number) recommendation.get(
+                            "articleId"
+                    );
 
             Number score =
-                    (Number) recommendation.get("score");
+                    (Number) recommendation.get(
+                            "score"
+                    );
+
+            if (articleId == null || score == null) {
+                continue;
+            }
 
             for (KnowledgeArticle article : articles) {
 
-                if (article.getId().equals(articleId.longValue())) {
+                if (article.getId().equals(
+                        articleId.longValue()
+                )) {
 
                     result.add(
                             new ArticleRecommendationDto(

@@ -17,4 +17,10 @@ public interface KnowledgeArticleRepository
             boolean active,
             Pageable pageable
     );
+
+    Page<KnowledgeArticle> findByActiveAndCategoryId(
+            boolean active,
+            Long categoryId,
+            Pageable pageable
+    );
 }
