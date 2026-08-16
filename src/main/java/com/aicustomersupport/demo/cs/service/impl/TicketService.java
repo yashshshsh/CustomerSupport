@@ -122,12 +122,14 @@ public class TicketService implements ITicketService {
             Double confidence =
                     ((Number) aiResult.get("confidence")).doubleValue();
 
-            if (confidence >= 0.70) {
+            System.out.println("AI Predicted Category: " + predictedCategory);
+            System.out.println("AI Confidence: " + confidence);
 
-                Optional<Category> category1 =
-                        categoryRepository.findByName(predictedCategory);
+            Optional<Category> category1 =
+                    categoryRepository.findByName(predictedCategory);
 
-                category1.ifPresent(ticket::setCategory);
+            if (category1.isPresent()) {
+                ticket.setCategory(category1.get());
             }
 
             Ticket savedTicket = ticketRepository.save(ticket);
