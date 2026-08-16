@@ -1,41 +1,60 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from app.ml_model import predict_category
+from app.ml_model import (
+    predict_category,
+    predict_priority
+)
 
 
 app = FastAPI(
     title="Customer Support AI Service",
-    description="AI/ML service for the Customer Support System",
+    description="AI service for ticket category and priority prediction",
     version="1.0.0"
 )
 
+
+# ============================================================
+# REQUEST MODEL
+# ============================================================
 
 class TicketRequest(BaseModel):
     text: str
 
 
+# ============================================================
+# HEALTH CHECK
+# ============================================================
+
 @app.get("/")
-def root():
+def health_check():
+
     return {
         "message": "Customer Support AI Service is running"
     }
 
 
-@app.get("/health")
-def health():
-    return {
-        "status": "UP"
-    }
-
+# ============================================================
+# CATEGORY PREDICTION
+# ============================================================
 
 @app.post("/predict")
 def predict(request: TicketRequest):
 
-    result = predict_category(request.text)
+    return predict_category(
+        request.text
+    )
 
-    return {
-        "text": request.text,
-        "category": result["category"],
-        "confidence": result["confidence"]
-    }
+
+# ============================================================
+# PRIORITY PREDICTION
+# ============================================================
+
+@app.post("/predict-priority")
+def predict_priority_endpoint(
+    request: TicketRequest
+):
+
+    return predict_priority(
+        request.text
+    )

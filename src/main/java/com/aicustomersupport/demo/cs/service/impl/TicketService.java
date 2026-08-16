@@ -111,25 +111,89 @@ public class TicketService implements ITicketService {
                 ticket.setStatus(TicketStatus.OPEN);
             }
 
-            String text = ticket.getSubject() + " " + ticket.getDescription();
+            String text = ticket.getSubject()
+                    + " "
+                    + (ticket.getDescription() != null
+                    ? ticket.getDescription()
+                    : "");
 
-            Map<String, Object> aiResult =
+// ============================================================
+// AI CATEGORY PREDICTION
+// ============================================================
+
+            Map<String, Object> categoryAiResult =
                     aiClassificationService.classifyTicket(text);
 
             String predictedCategory =
-                    (String) aiResult.get("category");
+                    (String) categoryAiResult.get("category");
 
-            Double confidence =
-                    ((Number) aiResult.get("confidence")).doubleValue();
+            Double categoryConfidence =
+                    ((Number) categoryAiResult.get("confidence")).doubleValue();
 
-            System.out.println("AI Predicted Category: " + predictedCategory);
-            System.out.println("AI Confidence: " + confidence);
+            System.out.println(
+                    "AI Predicted Category: " + predictedCategory
+            );
+
+            System.out.println(
+                    "AI Category Confidence: " + categoryConfidence
+            );
+
+
+// ============================================================
+// AI PRIORITY PREDICTION
+// ============================================================
+
+            Map<String, Object> priorityAiResult =
+                    aiClassificationService.predictPriority(text);
+
+            String predictedPriority =
+                    (String) priorityAiResult.get("priority");
+
+            Double priorityConfidence =
+                    ((Number) priorityAiResult.get("confidence")).doubleValue();
+
+            System.out.println(
+                    "AI Predicted Priority: " + predictedPriority
+            );
+
+            System.out.println(
+                    "AI Priority Confidence: " + priorityConfidence
+            );
+
+
+// ============================================================
+// APPLY AI CATEGORY
+// ============================================================
 
             Optional<Category> category1 =
                     categoryRepository.findByName(predictedCategory);
 
             if (category1.isPresent()) {
                 ticket.setCategory(category1.get());
+            }
+
+
+// ============================================================
+// APPLY AI PRIORITY
+// ============================================================
+
+            try {
+
+                ticket.setPriority(
+                        com.aicustomersupport.demo.cs.model.TicketPriority
+                                .valueOf(predictedPriority)
+                );
+
+            } catch (IllegalArgumentException e) {
+
+                System.out.println(
+                        "Invalid AI priority: " + predictedPriority
+                );
+
+                // Safe fallback
+                ticket.setPriority(
+                        com.aicustomersupport.demo.cs.model.TicketPriority.MEDIUM
+                );
             }
 
             Ticket savedTicket = ticketRepository.save(ticket);
