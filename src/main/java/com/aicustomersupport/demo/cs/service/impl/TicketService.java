@@ -1,11 +1,10 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
-import com.aicustomersupport.demo.cs.dto.ArticleRecommendationDto;
+import com.aicustomersupport.demo.cs.dto.AiTicketAnalysisDto;
 import com.aicustomersupport.demo.cs.dto.Response;
 import com.aicustomersupport.demo.cs.dto.TicketDto;
 import com.aicustomersupport.demo.cs.dto.TicketUpdateRequestDto;
 import com.aicustomersupport.demo.cs.model.Category;
-import com.aicustomersupport.demo.cs.model.KnowledgeArticle;
 import com.aicustomersupport.demo.cs.model.Role;
 import com.aicustomersupport.demo.cs.model.Ticket;
 import com.aicustomersupport.demo.cs.model.TicketPriority;
@@ -13,23 +12,18 @@ import com.aicustomersupport.demo.cs.model.TicketStatus;
 import com.aicustomersupport.demo.cs.model.TicketStatusHistory;
 import com.aicustomersupport.demo.cs.model.User;
 import com.aicustomersupport.demo.cs.repository.CategoryRepository;
-import com.aicustomersupport.demo.cs.repository.KnowledgeArticleRepository;
 import com.aicustomersupport.demo.cs.repository.TicketRepository;
 import com.aicustomersupport.demo.cs.repository.TicketStatusHistoryRepository;
 import com.aicustomersupport.demo.cs.repository.UserRepository;
-import com.aicustomersupport.demo.cs.service.interfac.IAiRecommendationService;
+import com.aicustomersupport.demo.cs.service.interfac.IAiTicketAnalysisService;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketService;
-import com.aicustomersupport.demo.cs.serviceai.AiClassificationService;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -46,13 +40,7 @@ public class TicketService implements ITicketService {
     private CategoryRepository categoryRepository;
 
     @Autowired
-    private KnowledgeArticleRepository knowledgeArticleRepository;
-
-    @Autowired
-    private AiClassificationService aiClassificationService;
-
-    @Autowired
-    private IAiRecommendationService aiRecommendationService;
+    private IAiTicketAnalysisService aiTicketAnalysisService;
 
     @Autowired
     private TicketStatusHistoryRepository ticketStatusHistoryRepository;
@@ -79,6 +67,7 @@ public class TicketService implements ITicketService {
 
                 response.setStatusCode(400);
                 response.setMessage("Subject is required");
+
                 return response;
             }
 
@@ -88,6 +77,7 @@ public class TicketService implements ITicketService {
 
                 response.setStatusCode(400);
                 response.setMessage("Customer ID is required");
+
                 return response;
             }
 
@@ -105,15 +95,18 @@ public class TicketService implements ITicketService {
 
                 response.setStatusCode(404);
                 response.setMessage("Customer not found");
+
                 return response;
             }
 
-            User customer = customerOptional.get();
+            User customer =
+                    customerOptional.get();
 
 
             if (customer.getRole() != Role.CUSTOMER) {
 
                 response.setStatusCode(400);
+
                 response.setMessage(
                         "Selected user is not a customer"
                 );
@@ -139,6 +132,7 @@ public class TicketService implements ITicketService {
                 if (agentOptional.isEmpty()) {
 
                     response.setStatusCode(404);
+
                     response.setMessage(
                             "Assigned agent not found"
                     );
@@ -146,11 +140,14 @@ public class TicketService implements ITicketService {
                     return response;
                 }
 
-                assignedAgent = agentOptional.get();
+                assignedAgent =
+                        agentOptional.get();
+
 
                 if (assignedAgent.getRole() != Role.AGENT) {
 
                     response.setStatusCode(400);
+
                     response.setMessage(
                             "Selected user is not an agent"
                     );
@@ -177,12 +174,16 @@ public class TicketService implements ITicketService {
                 if (categoryOptional.isEmpty()) {
 
                     response.setStatusCode(404);
-                    response.setMessage("Category not found");
+
+                    response.setMessage(
+                            "Category not found"
+                    );
 
                     return response;
                 }
 
-                category = categoryOptional.get();
+                category =
+                        categoryOptional.get();
             }
 
 
@@ -191,12 +192,17 @@ public class TicketService implements ITicketService {
             // ====================================================
 
             ticket.setCustomer(customer);
+
             ticket.setAssignedAgent(assignedAgent);
+
             ticket.setCategory(category);
 
 
             if (ticket.getStatus() == null) {
-                ticket.setStatus(TicketStatus.OPEN);
+
+                ticket.setStatus(
+                        TicketStatus.OPEN
+                );
             }
 
 
@@ -215,96 +221,59 @@ public class TicketService implements ITicketService {
 
 
             // ====================================================
-            // AI CATEGORY PREDICTION
+            // COMPLETE AI TICKET ANALYSIS
             // ====================================================
 
-            Map<String, Object> categoryAiResult =
-                    aiClassificationService.classifyTicket(text);
+            AiTicketAnalysisDto aiAnalysis =
+                    aiTicketAnalysisService.analyzeTicket(
+                            text
+                    );
 
+
+            // ====================================================
+            // GET AI CATEGORY
+            // ====================================================
 
             String predictedCategory =
-                    (String) categoryAiResult.get("category");
+                    aiAnalysis.getCategory();
 
 
-            Double categoryConfidence = null;
-
-            if (categoryAiResult.get("confidence") != null) {
-
-                categoryConfidence =
-                        ((Number)
-                                categoryAiResult.get("confidence"))
-                                .doubleValue();
-            }
-
-
-            System.out.println(
-                    "AI Predicted Category: "
-                            + predictedCategory
-            );
-
-            System.out.println(
-                    "AI Category Confidence: "
-                            + categoryConfidence
-            );
-
-
-            // ====================================================
-            // AI PRIORITY PREDICTION
-            // ====================================================
-
-            Map<String, Object> priorityAiResult =
-                    aiClassificationService.predictPriority(text);
-
-
-            String predictedPriority =
-                    (String) priorityAiResult.get("priority");
-
-
-            Double priorityConfidence = null;
-
-            if (priorityAiResult.get("confidence") != null) {
-
-                priorityConfidence =
-                        ((Number)
-                                priorityAiResult.get("confidence"))
-                                .doubleValue();
-            }
-
-
-            System.out.println(
-                    "AI Predicted Priority: "
-                            + predictedPriority
-            );
-
-            System.out.println(
-                    "AI Priority Confidence: "
-                            + priorityConfidence
-            );
+            Double categoryConfidence =
+                    aiAnalysis.getCategoryConfidence();
 
 
             // ====================================================
             // APPLY AI CATEGORY TO TICKET
             // ====================================================
 
-            Category predictedCategoryEntity = null;
-
             if (predictedCategory != null) {
 
-                Optional<Category> categoryOptional =
+                Optional<Category>
+                        predictedCategoryOptional =
                         categoryRepository.findByName(
                                 predictedCategory
                         );
 
-                if (categoryOptional.isPresent()) {
 
-                    predictedCategoryEntity =
-                            categoryOptional.get();
+                if (predictedCategoryOptional.isPresent()) {
 
                     ticket.setCategory(
-                            predictedCategoryEntity
+                            predictedCategoryOptional.get()
                     );
                 }
             }
+
+
+            // ====================================================
+            // GET AI PRIORITY
+            // ====================================================
+
+            String predictedPriority =
+                    aiAnalysis.getPriority();
+
+
+            Double priorityConfidence =
+                    aiAnalysis.getPriorityConfidence();
 
 
             // ====================================================
@@ -329,7 +298,6 @@ public class TicketService implements ITicketService {
                                 + predictedPriority
                 );
 
-                // Safe fallback
                 ticket.setPriority(
                         TicketPriority.MEDIUM
                 );
@@ -337,41 +305,11 @@ public class TicketService implements ITicketService {
 
 
             // ====================================================
-            // KNOWLEDGE ARTICLE RECOMMENDATION
+            // GET KNOWLEDGE RECOMMENDATIONS
             // ====================================================
 
-            List<ArticleRecommendationDto>
-                    recommendations =
-                    List.of();
-
-
-            if (predictedCategoryEntity != null) {
-
-                Page<KnowledgeArticle> activeArticles =
-                        knowledgeArticleRepository
-                                .findByActiveAndCategoryId(
-                                        true,
-                                        predictedCategoryEntity.getId(),
-                                        PageRequest.of(0, 100)
-                                );
-
-
-                if (!activeArticles.isEmpty()) {
-
-                    recommendations =
-                            aiRecommendationService
-                                    .recommendArticles(
-                                            text,
-                                            activeArticles.getContent()
-                                    );
-                }
-            }
-
-
-            System.out.println(
-                    "Knowledge Article Recommendations: "
-                            + recommendations.size()
-            );
+            var recommendations =
+                    aiAnalysis.getRecommendations();
 
 
             // ====================================================
@@ -392,6 +330,7 @@ public class TicketService implements ITicketService {
                     "Ticket created successfully"
             );
 
+
             response.setTicket(
                     convertToDto(savedTicket)
             );
@@ -405,17 +344,21 @@ public class TicketService implements ITicketService {
                     predictedCategory
             );
 
+
             response.setAiCategoryConfidence(
                     categoryConfidence
             );
+
 
             response.setAiPriority(
                     predictedPriority
             );
 
+
             response.setAiPriorityConfidence(
                     priorityConfidence
             );
+
 
             response.setKnowledgeArticleRecommendations(
                     recommendations
@@ -452,9 +395,11 @@ public class TicketService implements ITicketService {
             Optional<Ticket> ticketOptional =
                     ticketRepository.findById(id);
 
+
             if (ticketOptional.isEmpty()) {
 
                 response.setStatusCode(404);
+
                 response.setMessage(
                         "Ticket not found"
                 );
@@ -470,8 +415,11 @@ public class TicketService implements ITicketService {
             );
 
             response.setTicket(
-                    convertToDto(ticketOptional.get())
+                    convertToDto(
+                            ticketOptional.get()
+                    )
             );
+
 
         } catch (Exception e) {
 
@@ -515,6 +463,7 @@ public class TicketService implements ITicketService {
             );
 
             response.setTickets(ticketDtos);
+
 
         } catch (Exception e) {
 
@@ -575,6 +524,7 @@ public class TicketService implements ITicketService {
 
             response.setTickets(ticketDtos);
 
+
         } catch (Exception e) {
 
             response.setStatusCode(500);
@@ -634,6 +584,7 @@ public class TicketService implements ITicketService {
 
             response.setTickets(ticketDtos);
 
+
         } catch (Exception e) {
 
             response.setStatusCode(500);
@@ -687,6 +638,7 @@ public class TicketService implements ITicketService {
 
             response.setTickets(ticketDtos);
 
+
         } catch (IllegalArgumentException e) {
 
             response.setStatusCode(400);
@@ -695,6 +647,7 @@ public class TicketService implements ITicketService {
                     "Invalid ticket status: "
                             + status
             );
+
 
         } catch (Exception e) {
 
@@ -840,7 +793,8 @@ public class TicketService implements ITicketService {
             if (ticketUpdateRequest
                     .getCategoryId() != null) {
 
-                Optional<Category> categoryOptional =
+                Optional<Category>
+                        categoryOptional =
                         categoryRepository.findById(
                                 ticketUpdateRequest
                                         .getCategoryId()
@@ -910,6 +864,7 @@ public class TicketService implements ITicketService {
                 TicketStatus oldStatus =
                         ticket.getStatus();
 
+
                 TicketStatus newStatus =
                         ticketUpdateRequest.getStatus();
 
@@ -928,6 +883,7 @@ public class TicketService implements ITicketService {
 
                 TicketStatusHistory history =
                         new TicketStatusHistory();
+
 
                 history.setTicket(ticket);
 
@@ -1010,6 +966,7 @@ public class TicketService implements ITicketService {
             response.setMessage(
                     "Ticket deleted successfully"
             );
+
 
         } catch (Exception e) {
 
