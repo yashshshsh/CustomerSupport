@@ -17,11 +17,13 @@ import com.aicustomersupport.demo.cs.service.interfac.ITicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.aicustomersupport.demo.cs.serviceai.AiClassificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 public class TicketService implements ITicketService {
@@ -36,7 +38,11 @@ public class TicketService implements ITicketService {
     private CategoryRepository categoryRepository;
 
     @Autowired
+    private AiClassificationService aiClassificationService;
+
+    @Autowired
     private TicketStatusHistoryRepository ticketStatusHistoryRepository;
+
 
     @Override
     @Transactional
@@ -103,6 +109,25 @@ public class TicketService implements ITicketService {
 
             if (ticket.getStatus() == null) {
                 ticket.setStatus(TicketStatus.OPEN);
+            }
+
+            String text = ticket.getSubject() + " " + ticket.getDescription();
+
+            Map<String, Object> aiResult =
+                    aiClassificationService.classifyTicket(text);
+
+            String predictedCategory =
+                    (String) aiResult.get("category");
+
+            Double confidence =
+                    ((Number) aiResult.get("confidence")).doubleValue();
+
+            if (confidence >= 0.70) {
+
+                Optional<Category> category1 =
+                        categoryRepository.findByName(predictedCategory);
+
+                category1.ifPresent(ticket::setCategory);
             }
 
             Ticket savedTicket = ticketRepository.save(ticket);

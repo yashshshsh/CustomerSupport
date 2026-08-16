@@ -6,6 +6,9 @@ import com.aicustomersupport.demo.cs.model.Ticket;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.aicustomersupport.demo.cs.serviceai.AiClassificationService;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -13,6 +16,17 @@ public class TicketController {
 
     @Autowired
     private ITicketService ticketService;
+
+    @Autowired
+    private AiClassificationService aiClassificationService;
+
+    @PostMapping("/ai-classify")
+    public Map<String, Object> classifyTicket(@RequestBody Map<String, String> request) {
+
+        return aiClassificationService.classifyTicket(
+                request.get("text")
+        );
+    }
 
     @PostMapping
     public Response createTicket(@RequestBody Ticket ticket) {
