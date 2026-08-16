@@ -18,6 +18,10 @@ public interface ITicketService {
 
     Response getTicketsByStatus(String status);
 
+    Response analyzeTicketWithAI(Long id);
+
+    Response applyAIAnalysis(Long id);
+
     Response updateTicket(TicketUpdateRequestDto ticketUpdateRequest,
                           Long id);
 

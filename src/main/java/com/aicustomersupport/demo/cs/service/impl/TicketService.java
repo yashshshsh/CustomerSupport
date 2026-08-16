@@ -45,6 +45,318 @@ public class TicketService implements ITicketService {
     @Autowired
     private TicketStatusHistoryRepository ticketStatusHistoryRepository;
 
+    // ============================================================
+// AI RE-ANALYSIS OF EXISTING TICKET
+// ============================================================
+
+    // ============================================================
+// APPLY AI ANALYSIS TO EXISTING TICKET
+// ============================================================
+
+    @Override
+    @Transactional
+    public Response applyAIAnalysis(Long id) {
+
+        Response response = new Response();
+
+        try {
+
+            // ====================================================
+            // FIND EXISTING TICKET
+            // ====================================================
+
+            Optional<Ticket> ticketOptional =
+                    ticketRepository.findById(id);
+
+            if (ticketOptional.isEmpty()) {
+
+                response.setStatusCode(404);
+
+                response.setMessage(
+                        "Ticket not found"
+                );
+
+                return response;
+            }
+
+            Ticket ticket =
+                    ticketOptional.get();
+
+
+            // ====================================================
+            // BUILD TEXT FOR AI
+            // ====================================================
+
+            String text =
+                    ticket.getSubject()
+                            + " "
+                            + (
+                            ticket.getDescription() != null
+                                    ? ticket.getDescription()
+                                    : ""
+                    );
+
+
+            // ====================================================
+            // RUN AI ANALYSIS
+            // ====================================================
+
+            AiTicketAnalysisDto aiAnalysis =
+                    aiTicketAnalysisService.analyzeTicket(
+                            text
+                    );
+
+
+            // ====================================================
+            // GET AI CATEGORY
+            // ====================================================
+
+            String predictedCategory =
+                    aiAnalysis.getCategory();
+
+
+            Double categoryConfidence =
+                    aiAnalysis.getCategoryConfidence();
+
+
+            // ====================================================
+            // APPLY AI CATEGORY
+            // ====================================================
+
+            if (predictedCategory != null
+                    && !predictedCategory.isBlank()) {
+
+                Optional<Category> categoryOptional =
+                        categoryRepository.findByName(
+                                predictedCategory
+                        );
+
+                if (categoryOptional.isEmpty()) {
+
+                    response.setStatusCode(404);
+
+                    response.setMessage(
+                            "AI predicted category not found: "
+                                    + predictedCategory
+                    );
+
+                    return response;
+                }
+
+                ticket.setCategory(
+                        categoryOptional.get()
+                );
+            }
+
+
+            // ====================================================
+            // GET AI PRIORITY
+            // ====================================================
+
+            String predictedPriority =
+                    aiAnalysis.getPriority();
+
+
+            Double priorityConfidence =
+                    aiAnalysis.getPriorityConfidence();
+
+
+            // ====================================================
+            // APPLY AI PRIORITY
+            // ====================================================
+
+            if (predictedPriority != null
+                    && !predictedPriority.isBlank()) {
+
+                try {
+
+                    ticket.setPriority(
+                            TicketPriority.valueOf(
+                                    predictedPriority.toUpperCase()
+                            )
+                    );
+
+                } catch (IllegalArgumentException e) {
+
+                    response.setStatusCode(400);
+
+                    response.setMessage(
+                            "Invalid AI priority: "
+                                    + predictedPriority
+                    );
+
+                    return response;
+                }
+            }
+
+
+            // ====================================================
+            // SAVE UPDATED TICKET
+            // ====================================================
+
+            Ticket updatedTicket =
+                    ticketRepository.save(ticket);
+
+
+            // ====================================================
+            // BUILD RESPONSE
+            // ====================================================
+
+            response.setStatusCode(200);
+
+            response.setMessage(
+                    "AI analysis applied successfully"
+            );
+
+
+            // Updated ticket
+            response.setTicket(
+                    convertToDto(updatedTicket)
+            );
+
+
+            // AI results
+            response.setAiCategory(
+                    predictedCategory
+            );
+
+            response.setAiCategoryConfidence(
+                    categoryConfidence
+            );
+
+            response.setAiPriority(
+                    predictedPriority
+            );
+
+            response.setAiPriorityConfidence(
+                    priorityConfidence
+            );
+
+
+            // Recommendations are suggestions only.
+            // They are NOT saved to the ticket.
+            response.setKnowledgeArticleRecommendations(
+                    aiAnalysis.getRecommendations()
+            );
+
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            response.setStatusCode(500);
+
+            response.setMessage(
+                    "Error while applying AI analysis: "
+                            + e.getMessage()
+            );
+        }
+
+        return response;
+    }
+
+    @Override
+    public Response analyzeTicketWithAI(Long id) {
+
+        Response response = new Response();
+
+        try {
+
+            // ====================================================
+            // FIND EXISTING TICKET
+            // ====================================================
+
+            Optional<Ticket> ticketOptional =
+                    ticketRepository.findById(id);
+
+            if (ticketOptional.isEmpty()) {
+
+                response.setStatusCode(404);
+
+                response.setMessage(
+                        "Ticket not found"
+                );
+
+                return response;
+            }
+
+            Ticket ticket =
+                    ticketOptional.get();
+
+
+            // ====================================================
+            // BUILD TEXT FOR AI
+            // ====================================================
+
+            String text =
+                    ticket.getSubject()
+                            + " "
+                            + (
+                            ticket.getDescription() != null
+                                    ? ticket.getDescription()
+                                    : ""
+                    );
+
+
+            // ====================================================
+            // RUN AI ANALYSIS
+            // ====================================================
+
+            AiTicketAnalysisDto aiAnalysis =
+                    aiTicketAnalysisService.analyzeTicket(
+                            text
+                    );
+
+
+            // ====================================================
+            // BUILD RESPONSE
+            // ====================================================
+
+            response.setStatusCode(200);
+
+            response.setMessage(
+                    "AI ticket analysis completed successfully"
+            );
+
+
+            response.setAiCategory(
+                    aiAnalysis.getCategory()
+            );
+
+            response.setAiCategoryConfidence(
+                    aiAnalysis.getCategoryConfidence()
+            );
+
+
+            response.setAiPriority(
+                    aiAnalysis.getPriority()
+            );
+
+            response.setAiPriorityConfidence(
+                    aiAnalysis.getPriorityConfidence()
+            );
+
+
+            response.setKnowledgeArticleRecommendations(
+                    aiAnalysis.getRecommendations()
+            );
+
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            response.setStatusCode(500);
+
+            response.setMessage(
+                    "Error while analyzing ticket with AI: "
+                            + e.getMessage()
+            );
+        }
+
+        return response;
+    }
+
 
     // ============================================================
     // CREATE TICKET
