@@ -1,5 +1,6 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
+import com.aicustomersupport.demo.cs.dto.ArticleRecommendationDto;
 import com.aicustomersupport.demo.cs.model.KnowledgeArticle;
 import com.aicustomersupport.demo.cs.service.interfac.IAiRecommendationService;
 import org.springframework.http.*;
@@ -23,7 +24,7 @@ public class AiRecommendationService implements IAiRecommendationService {
     }
 
     @Override
-    public List<KnowledgeArticle> recommendArticles(
+    public List<ArticleRecommendationDto> recommendArticles(
             String ticketText,
             List<KnowledgeArticle> articles
     ) {
@@ -73,17 +74,31 @@ public class AiRecommendationService implements IAiRecommendationService {
                 (List<Map<String, Object>>)
                         response.getBody().get("recommendations");
 
-        List<KnowledgeArticle> result = new ArrayList<>();
+        List<ArticleRecommendationDto> result = new ArrayList<>();
+
+        if (recommendations == null) {
+            return result;
+        }
 
         for (Map<String, Object> recommendation : recommendations) {
 
             Number articleId =
                     (Number) recommendation.get("articleId");
 
+            Number score =
+                    (Number) recommendation.get("score");
+
             for (KnowledgeArticle article : articles) {
 
                 if (article.getId().equals(articleId.longValue())) {
-                    result.add(article);
+
+                    result.add(
+                            new ArticleRecommendationDto(
+                                    article,
+                                    score.doubleValue()
+                            )
+                    );
+
                     break;
                 }
             }

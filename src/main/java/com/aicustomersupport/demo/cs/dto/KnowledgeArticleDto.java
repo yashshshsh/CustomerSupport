@@ -19,7 +19,7 @@ public class KnowledgeArticleDto {
 
     private Long categoryId;
 
-    private boolean active;
+    private Boolean active;
 
     private LocalDateTime createdAt;
 

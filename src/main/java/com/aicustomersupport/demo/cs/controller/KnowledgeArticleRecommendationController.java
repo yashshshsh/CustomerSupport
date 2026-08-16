@@ -1,5 +1,6 @@
 package com.aicustomersupport.demo.cs.controller;
 
+import com.aicustomersupport.demo.cs.dto.ArticleRecommendationDto;
 import com.aicustomersupport.demo.cs.model.KnowledgeArticle;
 import com.aicustomersupport.demo.cs.repository.KnowledgeArticleRepository;
 import com.aicustomersupport.demo.cs.service.interfac.IAiRecommendationService;
@@ -25,7 +26,7 @@ public class KnowledgeArticleRecommendationController {
     }
 
     @PostMapping("/recommend")
-    public List<KnowledgeArticle> recommendArticles(
+    public List<ArticleRecommendationDto> recommendArticles(
             @RequestBody RecommendationRequest request
     ) {
 
@@ -35,13 +36,10 @@ public class KnowledgeArticleRecommendationController {
                         PageRequest.of(0, 100)
                 );
 
-        List<KnowledgeArticle> recommendations =
-                aiRecommendationService.recommendArticles(
-                        request.text(),
-                        activeArticles.getContent()
-                );
-
-        return recommendations;
+        return aiRecommendationService.recommendArticles(
+                request.text(),
+                activeArticles.getContent()
+        );
     }
 
     public record RecommendationRequest(
