@@ -1,9 +1,6 @@
 package com.aicustomersupport.demo.cs.service.impl;
 
-import com.aicustomersupport.demo.cs.dto.AiTicketAnalysisDto;
-import com.aicustomersupport.demo.cs.dto.Response;
-import com.aicustomersupport.demo.cs.dto.TicketDto;
-import com.aicustomersupport.demo.cs.dto.TicketUpdateRequestDto;
+import com.aicustomersupport.demo.cs.dto.*;
 import com.aicustomersupport.demo.cs.model.Category;
 import com.aicustomersupport.demo.cs.model.Role;
 import com.aicustomersupport.demo.cs.model.Ticket;
@@ -15,6 +12,7 @@ import com.aicustomersupport.demo.cs.repository.CategoryRepository;
 import com.aicustomersupport.demo.cs.repository.TicketRepository;
 import com.aicustomersupport.demo.cs.repository.TicketStatusHistoryRepository;
 import com.aicustomersupport.demo.cs.repository.UserRepository;
+import com.aicustomersupport.demo.cs.service.interfac.IAiDecisionService;
 import com.aicustomersupport.demo.cs.service.interfac.IAiTicketAnalysisService;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketService;
 
@@ -44,6 +42,146 @@ public class TicketService implements ITicketService {
 
     @Autowired
     private TicketStatusHistoryRepository ticketStatusHistoryRepository;
+
+    @Autowired
+    private IAiDecisionService aiDecisionService;
+
+    @Override
+    public Response makeAIDecision(Long id) {
+
+        Response response = new Response();
+
+        try {
+
+            // ====================================================
+            // FIND EXISTING TICKET
+            // ====================================================
+
+            Optional<Ticket> ticketOptional =
+                    ticketRepository.findById(id);
+
+            if (ticketOptional.isEmpty()) {
+
+                response.setStatusCode(404);
+
+                response.setMessage(
+                        "Ticket not found"
+                );
+
+                return response;
+            }
+
+
+            Ticket ticket =
+                    ticketOptional.get();
+
+
+            // ====================================================
+            // BUILD TEXT FOR AI
+            // ====================================================
+
+            String text =
+                    (
+                            ticket.getSubject() != null
+                                    ? ticket.getSubject()
+                                    : ""
+                    )
+                            + " "
+                            + (
+                            ticket.getDescription() != null
+                                    ? ticket.getDescription()
+                                    : ""
+                    );
+
+
+            // ====================================================
+            // RUN AI DECISION ENGINE
+            // ====================================================
+
+            AiDecisionDto decision =
+                    aiDecisionService.makeDecision(
+                            text
+                    );
+
+
+            // ====================================================
+            // BUILD RESPONSE
+            // ====================================================
+
+            response.setStatusCode(200);
+
+            response.setMessage(
+                    "AI decision generated successfully"
+            );
+
+
+            // ====================================================
+            // AI CATEGORY
+            // ====================================================
+
+            response.setAiCategory(
+                    decision.getAiCategory()
+            );
+
+            response.setAiCategoryConfidence(
+                    decision.getAiCategoryConfidence()
+            );
+
+
+            // ====================================================
+            // AI PRIORITY
+            // ====================================================
+
+            response.setAiPriority(
+                    decision.getAiPriority()
+            );
+
+            response.setAiPriorityConfidence(
+                    decision.getAiPriorityConfidence()
+            );
+
+
+            // ====================================================
+            // SUGGESTED ACTION
+            // ====================================================
+
+            response.setSuggestedAction(
+                    decision.getSuggestedAction()
+            );
+
+
+            // ====================================================
+            // DECISION REASON
+            // ====================================================
+
+            response.setDecisionReason(
+                    decision.getReason()
+            );
+
+
+            // ====================================================
+            // KNOWLEDGE ARTICLES
+            // ====================================================
+
+            response.setKnowledgeArticleRecommendations(
+                    decision.getKnowledgeArticleRecommendations()
+            );
+
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            response.setStatusCode(500);
+
+            response.setMessage(
+                    "Error while generating AI decision: "
+                            + e.getMessage()
+            );
+        }
+
+        return response;
+    }
 
     // ============================================================
 // AI RE-ANALYSIS OF EXISTING TICKET

@@ -14,13 +14,16 @@ import java.util.List;
 public class Response {
 
     private int statusCode;
+
     private String message;
+
 
     // ============================================================
     // USER RESPONSES
     // ============================================================
 
     private UserDto user;
+
     private List<UserDto> users;
 
 
@@ -29,6 +32,7 @@ public class Response {
     // ============================================================
 
     private TicketDto ticket;
+
     private List<TicketDto> tickets;
 
 
@@ -37,6 +41,7 @@ public class Response {
     // ============================================================
 
     private CategoryDto category;
+
     private List<CategoryDto> categories;
 
 
@@ -45,6 +50,7 @@ public class Response {
     // ============================================================
 
     private TicketStatusHistoryDto ticketStatusHistory;
+
     private List<TicketStatusHistoryDto> ticketStatusHistories;
 
 
@@ -53,6 +59,7 @@ public class Response {
     // ============================================================
 
     private TicketMessageDto ticketMessage;
+
     private List<TicketMessageDto> ticketMessages;
 
 
@@ -61,6 +68,7 @@ public class Response {
     // ============================================================
 
     private TicketFeedbackDto ticketFeedback;
+
     private List<TicketFeedbackDto> ticketFeedbacks;
 
 
@@ -69,6 +77,7 @@ public class Response {
     // ============================================================
 
     private TicketAttachmentDto ticketAttachment;
+
     private List<TicketAttachmentDto> ticketAttachments;
 
 
@@ -77,6 +86,7 @@ public class Response {
     // ============================================================
 
     private KnowledgeArticleDto knowledgeArticle;
+
     private List<KnowledgeArticleDto> knowledgeArticles;
 
 
@@ -102,15 +112,30 @@ public class Response {
     // AI KNOWLEDGE ARTICLE RECOMMENDATIONS
     // ============================================================
 
-    private List<ArticleRecommendationDto> knowledgeArticleRecommendations;
+    private List<ArticleRecommendationDto>
+            knowledgeArticleRecommendations;
+
+
+    // ============================================================
+    // AI DECISION
+    // ============================================================
+
+    private String suggestedAction;
+
+    private String decisionReason;
 
 
     // ============================================================
     // CONSTRUCTOR
     // ============================================================
 
-    public Response(int statusCode, String message) {
+    public Response(
+            int statusCode,
+            String message
+    ) {
+
         this.statusCode = statusCode;
+
         this.message = message;
     }
 }

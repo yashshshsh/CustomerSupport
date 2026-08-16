@@ -22,6 +22,9 @@ public interface ITicketService {
 
     Response applyAIAnalysis(Long id);
 
+    // NEW
+    Response makeAIDecision(Long id);
+
     Response updateTicket(TicketUpdateRequestDto ticketUpdateRequest,
                           Long id);
 

@@ -4,6 +4,7 @@ import com.aicustomersupport.demo.cs.dto.Response;
 import com.aicustomersupport.demo.cs.dto.TicketUpdateRequestDto;
 import com.aicustomersupport.demo.cs.model.Ticket;
 import com.aicustomersupport.demo.cs.service.interfac.ITicketService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,6 +58,30 @@ public class TicketController {
             @PathVariable Long id) {
 
         return ticketService.analyzeTicketWithAI(id);
+    }
+
+
+    // ============================================================
+    // AI DECISION ENGINE
+    // ============================================================
+
+    @PostMapping("/{id}/ai-decision")
+    public Response makeAIDecision(
+            @PathVariable Long id) {
+
+        return ticketService.makeAIDecision(id);
+    }
+
+
+    // ============================================================
+    // APPLY AI ANALYSIS
+    // ============================================================
+
+    @PostMapping("/{id}/ai-analysis/apply")
+    public Response applyAIAnalysis(
+            @PathVariable Long id) {
+
+        return ticketService.applyAIAnalysis(id);
     }
 
 
@@ -150,12 +175,5 @@ public class TicketController {
             @PathVariable Long id) {
 
         return ticketService.deleteTicket(id);
-    }
-
-    @PostMapping("/{id}/ai-analysis/apply")
-    public Response applyAIAnalysis(
-            @PathVariable Long id) {
-
-        return ticketService.applyAIAnalysis(id);
     }
 }
